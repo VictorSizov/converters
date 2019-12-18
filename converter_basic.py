@@ -4,15 +4,16 @@ ConverterBasic - базовый класс для конвертера xml - д�
 ConverterWithSteps - базовый класс для отладочного "пошагового" конвертера xml - документов.
 """
 
-from processor_basic import ProcessorBasic, fill_arg_for_processor
+from processor_basic import ProcessorBasic, fill_arg_for_processor, ProgramTerminated, expanduser
 import os
 import sys
 from lxml import etree
+import time
 
 
 class ConverterBasic(ProcessorBasic):
     def __init__(self, args):
-        self.outpath = os.path.expanduser(args.outpath)
+        self.outpath = expanduser(args.outpath)
         self.outcode = args.outcode
         super(ConverterBasic, self).__init__(args)
 
@@ -31,10 +32,10 @@ class ConverterBasic(ProcessorBasic):
             with open(outfile, 'w') as fout:
                 fout.write('<?xml version="1.0" encoding="{0}"?>\n'.format(self.outcode))
                 tree.write(fout, encoding=self.outcode, xml_declaration=False)
+        except (OSError, IOError) as e:
+            self.fatal_error("can't write  output file " + outfile)
         except etree.LxmlError as e:
-            self.wrong_docs += 1
-            if self.line != -1:
-                print >> sys.stderr, 'Error in', inpfile, 'line', self.line, ':', e.message
+            self.lxml_err_proc(e)
 
 
 class ConverterWithSteps(ConverterBasic):
@@ -52,32 +53,73 @@ class ConverterWithSteps(ConverterBasic):
         """ проверка, должен ли выполняться шаг"""
         return self.step == -1 or self.step == val
 
-    def process_step(self, inppath, outpath, err_file_name):
-        self.wrong_docs = 0
+    def process_step(self, inppath, outpath):
         if self.step != -1:
             print 'step', self.step
-            if err_file_name is not None and self.step < self.get_steps()-1:
-                (self.err_file_name, ext) = os.path.splitext(err_file_name)
-                self.err_file_name += str(self.step) + ext
             self.inppath = inppath + (str(self.step) if self.step > 0 else '')
+            step_str = str(self.step + 1) if self.step < self.get_steps()-1 else ''
+            self.error_processor.err_report_step(step_str)
             self.outpath = outpath if self.step == self.get_steps()-1 else inppath + str(self.step + 1)
-        super(ConverterWithSteps, self).process()
+        if not super(ConverterWithSteps, self).process():
+            raise ProgramTerminated()
+
+    def process_steps(self, range_data):
+        inppath = self.inppath
+        outpath = self.outpath
+        for self.step in range_data:
+            self.process_step(inppath, outpath)
+
+    def check_step_str(self, step_str, mess_prefix=''):
+        # type: (str, str) -> int
+        try:
+            step = int(step_str)
+        except ValueError:
+            self.fatal_error(mess_prefix + 'step_mode is not convertable to int')
+        if step < -1 or mess_prefix != '' and step == -1:
+            self.fatal_error( mess_prefix + 'step_mode wrong value')
+        if step > self.get_steps():
+            self.fatal_error(mess_prefix + 'step_mode is too big')
+        return step
+
+    def error_report(self, d1): # ignore error_report call in parent
+        d2 = time.clock()
+        print 'step processing time', d2 - d1, 'sec'
 
     def process(self):
-        """реализация пошаговой конверсии"""
-        steps_num = self.get_steps()
-        if self.step_mode < self.get_steps():
-            self.step = self.step_mode
-            self.process_step(self.inppath, self.outpath, self.err_file_name)
-        else:
-            if self.step_mode > self.get_steps():
-                print>>sys.stderr, "too big step_mode value"
-                return
-            inppath = self.inppath
-            outpath = self.outpath
-            err_file_name = self.err_file_name
-            for self.step in range(self.get_steps()):
-                self.process_step(inppath, outpath, err_file_name)
+        """реализация пошаговой конверсии
+        можно указать диапазон <low bound>-<upper bound>
+        или '-1' - без вывода промежуточных результатов
+        """
+        try:
+            d1 = time.clock()
+            if self.step_mode == 'all':
+                self.step_mode = str(self.get_steps())
+            steps = self.step_mode.split('-') if self.step_mode[0] !='-' else [self.step_mode]
+            if len(steps) > 2:
+                self.fatal_error("step_mode value wrong format")
+            if len(steps) == 2:
+                step0 = self.check_step_str(steps[0], 'lower bound of ')
+                step1 = self.check_step_str(steps[1], 'upper bound of ')
+                self.process_steps(range(step0, step1))
+            else:
+                step = self.check_step_str(steps[0])
+                if step < self.get_steps():
+                    self.step = step
+                    self.process_step(self.inppath, self.outpath)
+                else:
+                    self.process_steps(range(self.get_steps()))
+            super(ConverterWithSteps, self).error_report(d1)
+            return True
+        except ProgramTerminated:
+            return False
+
+
+class Normalizer(ConverterBasic):
+    def process_lxml_tree(self, tree):
+        for elem in tree.getroot().iter():
+            tmp = sorted(elem.items())
+            elem.attrib.clear()
+            elem.attrib.update(tmp)
 
 
 def fill_arg_for_converter(description, action_description=None):
@@ -85,3 +127,10 @@ def fill_arg_for_converter(description, action_description=None):
     parser.add_argument('--outpath', default=None)
     parser.add_argument('--outcode', choices=['utf-8', 'windows-1251'], default='utf-8')
     return parser
+
+
+if __name__ == '__main__':
+    parser = fill_arg_for_converter('normalizer')
+    parser_args = parser.parse_args()
+    normalizer = Normalizer(parser_args)
+    normalizer.process()
