@@ -7,10 +7,8 @@ ProcessorBasic - базовый класс для обработчика xml - �
 from lxml import etree
 
 import os
-import sys
 import time
 import argparse
-from collections import Counter
 from error_processor import ErrorProcessor, ProgramTerminated,expanduser
 
 
@@ -69,6 +67,8 @@ class ProcessorBasic(object):
 
         return None
 
+    valid_extensions = ('.xml', '.xhtml')
+
     def get_paths(self, inppath):
         """ Получение списка xnl-файлов для обработки
             Если параметер --files был указан,
@@ -87,9 +87,12 @@ class ProcessorBasic(object):
                 self.fatal_error("can't opens {0} file (file list)".format(self.files))
         if not paths:
             for root, dirs, files in os.walk(inppath, followlinks=True):
+                parts = os.path.split(root)
+                if parts[-1] == '.svn':
+                    continue
                 if files:
                     root = os.path.relpath(root, inppath)
-                    paths += [os.path.join(root, f) for f in files if os.path.splitext(f)[1] in ('.xml', '.xhtml')]
+                    paths += [os.path.join(root, f) for f in files if os.path.splitext(f)[1] in self.valid_extensions]
         return paths
 
     def process(self):

@@ -7,10 +7,11 @@ ValidatorBasic - базовый класс для валидаторов,
 
 
 from lxml import etree
-import sys
 import csv
 import os
-from error_processor import ProgramTerminated,expanduser
+from error_processor import ProgramTerminated, expanduser
+import collections
+import string
 
 from processor_basic import ProcessorBasic
 TEXT_REJECT = 0
@@ -26,6 +27,7 @@ class ValidatorBasic(ProcessorBasic):
         """инициализация имени схемы"""
         self.schema_name = expanduser(args.schema)
         self.table_name = expanduser(args.table)
+        self.valid_path_symbols = set(string.ascii_letters+string.digits+u"-+=_/\\.")
         super(ValidatorBasic, self).__init__(args)
 
     @staticmethod
@@ -120,6 +122,14 @@ class ValidatorBasic(ProcessorBasic):
             self.err_proc(error.message.encode("utf-8"))
         return False
 
+    def check_names(self, paths):
+        for path in paths:
+            wrong = set(path.decode('utf-8')).difference(self.valid_path_symbols)
+            if wrong:
+                mess = u','.join("'"+s+"'" for s in sorted(list(wrong)))
+                mess = mess.replace("' '", "<space>").encode('utf-8')
+                self.err_proc("Имя файла {0} в таблице содержит недопустимые символ(ы) {1}. ".
+                              format(path, mess))
 
     def get_paths(self, inppath):
         """ Получение списка xml-файлов для обработки
@@ -130,14 +140,22 @@ class ValidatorBasic(ProcessorBasic):
             Иначе вызывается get_paths() базового класса
             """
         paths = super(ValidatorBasic, self).get_paths(inppath)
+        #  self.check_names(paths, False)
         if self.table_name is None:
             return paths
         try:
             with open(self.table_name, 'rb') as f:
-                cmp_paths_set = {row['path'] for row in csv.DictReader(f, delimiter=';', strict=True)}
+                cmp_paths_list = [row['path'].lower() for row in csv.DictReader(f, delimiter=';', strict=True)]
         except (OSError, IOError) as e:
             self.fatal_error("can't read data from table " + self.table_name)
-        paths_set = {os.path.splitext(path.lower())[0] for path in paths}
+        #  проверка на наличие дублей
+        for item, count in collections.Counter(cmp_paths_list).most_common():
+            if count == 1:
+                break
+            self.err_proc('Название файла {0} повторяется в таблице {1} раз(а)'.format(item, count))
+        cmp_paths_set = set(cmp_paths_list)
+        self.check_names(sorted(cmp_paths_set))
+        paths_set = {os.path.splitext(path.lower().replace('\\', '/'))[0] for path in paths}
         self.line = -1
         if paths_set != cmp_paths_set:
             missed = cmp_paths_set.difference(paths_set)

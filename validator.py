@@ -73,7 +73,7 @@ class Validator(ValidatorBasic):
             if elem.tag is etree.PI or elem.tag is etree.Comment:
                 continue
             self.line = elem.sourceline
-            if self.is_space(elem.text) and len(elem)==0:
+            if self.is_space(elem.text) and len(elem) == 0 and not elem.attrib:
                 self.err_proc('tag "{0}" is empty'.format(elem.tag))
 
     def process_lxml_tree(self, tree):
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     parser = fill_arg_for_processor('speech validator')
     parser.add_argument('--schema', required=True)
     parser.add_argument('--ignore_mess', default=None)
-    parser.add_argument('--limit', type=int, default=100)
+    parser.add_argument('--limit', type=int, default=-1)
     parser.add_argument('--table', default=None)
     parser_args = parser.parse_args()
     validator = Validator(parser_args)

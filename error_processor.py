@@ -78,6 +78,8 @@ class ErrorProcessor(object):
             self.fatal_error('Message number exceed '+str(self.limit))
 
     def check_ignore(self, mess):
+        if isinstance(mess, unicode):
+            mess = mess.encode('utf-8')
         return self.ignore_mess is not None and mess in self.ignore_mess
 
     def proc_message(self, mess, f_name=None, line=-1, example=''):
