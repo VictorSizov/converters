@@ -10,8 +10,8 @@ from lxml import etree
 from lxml_ext import LxmlExt
 
 from converter_basic import ConverterWithSteps, fill_arg_for_converter
-
-SIMPLE_ACCENT = "`"
+SIMPLE_APOSTROPHE = "'"   # code: 39, 0x27
+SIMPLE_ACCENT = "`"  # code: 96, 0x60
 COMBINING_GRAVE_ACCENT = u'\u0300'  # ◌̀
 COMBINING_ACUTE_ACCENT = u'\u0301'  # ◌́
 COMBINING_CIRCUMFLEX_ACCENT = u'\u0302'  # ◌̂́

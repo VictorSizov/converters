@@ -48,13 +48,25 @@ class ErrorProcessor(object):
             self.err_report.close()
             self.err_report = None
 
+    @staticmethod
+    def try_create(path):
+        if path is None or path == '':
+            return
+        if not os.path.exists(path):
+            os.makedirs(path)
+
     def open_log(self,):
         try:
-            err_report_name = self.err_report_name
-            if self.step != '':
-                (err_report_name, ext) = os.path.splitext(err_report_name)
-                err_report_name += str(self.step) + ext
-            self.err_report = open(err_report_name, 'w') if self.err_report_name is not None else sys.stderr
+            if self.err_report_name is None:
+                self.err_report = sys.stderr
+                sys.stdout = open(os.devnull, 'w')
+            else:
+                err_report_name = self.err_report_name
+                if self.step != '':
+                    (err_report_name, ext) = os.path.splitext(err_report_name)
+                    err_report_name += str(self.step) + ext
+                self.try_create(os.path.split(err_report_name)[0])
+                self.err_report = open(err_report_name, 'w')
         except (OSError, IOError) as e:
             self.fatal_error("Can't open message file " + self.err_report_name)
 
@@ -113,6 +125,7 @@ class ErrorProcessor(object):
                 self.err_report.write(mess)
                 sys.stderr.write('See ' + self.err_report_name+'\n')
         if self.mess_counter:
+            self.try_create(os.path.split(self.stat_name)[0])
             try:
                 with open(self.stat_name, 'w') as f_count:
                     for err in self.mess_counter.most_common():

@@ -98,20 +98,6 @@ class ValidatorBasic(ProcessorBasic):
             if elem.getparent() is not None:
                 self.validate_text(elem.tail, elem.getparent())
 
-    '''
-    def validate_outbound_text(self, body, tag):
-        """проверка наличия непробельного текста
-        внутри элемента, где его не должно быть"""
-        cmpstr = u"'{0}': outbound text".format(tag)
-        ignore_mess = self.error_processor.ignore_mess
-        if ignore_mess is not None and cmpstr in ignore_mess:
-           return
-        for elem in body.iter(tag):
-            self.check_outbound_text(elem, False, tag)
-            for child in elem:
-                self.check_outbound_text(child, True, tag)
-    '''
-
     def process_lxml_tree(self, tree):
         """проверка соответствия xml-дерева схеме,
         вывод ошибок в случае несоответствия"""
@@ -131,6 +117,18 @@ class ValidatorBasic(ProcessorBasic):
                 self.err_proc("Имя файла {0} в таблице содержит недопустимые символ(ы) {1}. ".
                               format(path, mess))
 
+    def process_row(self, row):
+        restkey = row.get('###', None)
+        if restkey is not None:
+            nom = len(row)
+            for key in restkey:
+                if key != '':
+                    self.err_proc('Строка {0} в столбце {1}, в таблице должно быть не более {2} столбцов'.format(
+                        key, nom, len(row) - 1))
+                nom += 1
+        self.line += 1
+        return row['path'].lower()
+
     def get_paths(self, inppath):
         """ Получение списка xml-файлов для обработки
             список формирует get_paths() базового класса
@@ -145,7 +143,10 @@ class ValidatorBasic(ProcessorBasic):
             return paths
         try:
             with open(self.table_name, 'rb') as f:
-                cmp_paths_list = [row['path'].lower() for row in csv.DictReader(f, delimiter=';', strict=True)]
+                self.inpname, self.line = self.table_name, 1
+                dict_reader = csv.DictReader(f, delimiter=';', restkey='###', strict=True,)
+                cmp_paths_list = [self.process_row(row) for row in dict_reader]
+                self.inpname, self.line = None, -1
         except (OSError, IOError) as e:
             self.fatal_error("can't read data from table " + self.table_name)
         #  проверка на наличие дублей
