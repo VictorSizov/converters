@@ -41,33 +41,48 @@ class ConverterBasic(ProcessorBasic):
 class ConverterWithSteps(ConverterBasic):
     """пошаговый конвертер"""
     def __init__(self, args):
-        self.step_mode = args.step_mode
-        self.step = None
         super(ConverterWithSteps, self).__init__(args)
+        self.step_list = self.get_step_list(args.step_mode)
 
     @staticmethod
     def get_steps():
         raise Exception('you should rewrite this function in derived class')
 
-    def check_steps(self, val):
-        """ проверка, должен ли выполняться шаг"""
-        return self.step == -1 or self.step == val
+    def get_step_methods(self):
+        raise Exception('you should rewrite this function in derived class')
 
-    def process_step(self, inppath, outpath):
-        if self.step != -1:
-            print 'step', self.step
-            self.inppath = inppath + (str(self.step) if self.step > 0 else '')
-            step_str = str(self.step + 1) if self.step < self.get_steps()-1 else ''
-            self.error_processor.err_report_step(step_str)
-            self.outpath = outpath if self.step == self.get_steps()-1 else inppath + str(self.step + 1)
-        if not super(ConverterWithSteps, self).process():
-            raise ProgramTerminated()
+    def process_lxml_tree(self, tree):
+        self.line = -1
+        root = tree.getroot()
+        methods = self.get_step_methods()
+        for n in self.step_list:
+            methods[n](root)
 
-    def process_steps(self, range_data):
-        inppath = self.inppath
-        outpath = self.outpath
-        for self.step in range_data:
-            self.process_step(inppath, outpath)
+    def get_step_list(self, step_mode):
+        step_list = []
+        if step_mode == '-1':
+            step_list.extend(range(self.get_steps()))
+            return step_list
+        if step_mode[0] == ',' or step_mode [-1] == ',':
+            self.fatal_error('step_mode {0} is wrong'.format(step_mode))
+        for step1 in step_mode.split(','):
+            if step1[0] == '-' or step1[-1] == '-':
+                self.fatal_error('part of step_mode {0} is wrong'.format(step1))
+            steps2 = step1.split('-')
+            if len(steps2) > 2:
+                self.fatal_error("part of step_mode {0} is wrong".format(step1))
+            if len(steps2) == 2:
+                step0 = self.check_step_str(steps2[0], 'lower bound of {0}'.format(step1))
+                step1 = self.check_step_str(steps2[1], 'upper bound of {0}'.format(step1))
+                step_list.extend(range(step0, step1))
+            else:
+                step_list.append(self.check_step_str(steps2[0]))
+        prev = None
+        for curr in step_list:
+            if prev is not None and prev >= curr:
+                self.fatal_error("list of actions {0} is wrong".format(self.step_list.__repr__()))
+            prev = curr
+        return step_list
 
     def check_step_str(self, step_str, mess_prefix=''):
         # type: (str, str) -> int
@@ -80,38 +95,6 @@ class ConverterWithSteps(ConverterBasic):
         if step > self.get_steps():
             self.fatal_error(mess_prefix + 'step_mode is too big')
         return step
-
-    def error_report(self, d1): # ignore error_report call in parent
-        d2 = time.clock()
-        print 'step processing time', d2 - d1, 'sec'
-
-    def process(self):
-        """реализация пошаговой конверсии
-        можно указать диапазон <low bound>-<upper bound>
-        или '-1' - без вывода промежуточных результатов
-        """
-        try:
-            d1 = time.clock()
-            if self.step_mode == 'all':
-                self.step_mode = str(self.get_steps())
-            steps = self.step_mode.split('-') if self.step_mode[0] !='-' else [self.step_mode]
-            if len(steps) > 2:
-                self.fatal_error("step_mode value wrong format")
-            if len(steps) == 2:
-                step0 = self.check_step_str(steps[0], 'lower bound of ')
-                step1 = self.check_step_str(steps[1], 'upper bound of ')
-                self.process_steps(range(step0, step1))
-            else:
-                step = self.check_step_str(steps[0])
-                if step < self.get_steps():
-                    self.step = step
-                    self.process_step(self.inppath, self.outpath)
-                else:
-                    self.process_steps(range(self.get_steps()))
-            super(ConverterWithSteps, self).error_report(d1)
-            return True
-        except ProgramTerminated:
-            return False
 
 
 class Normalizer(ConverterBasic):

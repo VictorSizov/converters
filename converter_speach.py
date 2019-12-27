@@ -89,17 +89,33 @@ class ConverterSpeach(ConverterWithSteps):
     re_space = re.compile(ur'   *')
 
     def __init__(self, args):
-        self.text_deb = None
-        self.deb_index = -1
-        self.step = None
+        members_list = [self.lowercase_attrib,  # 0
+                        self.convert_p_sp,  # 1
+                        self.speach2speech,  # 2
+                        self.convert_role2actor,  # 3
+                        self.convert_lt_gt,  # 4
+                        self.convert_distinct_nrzb,  # 5
+                        self.remove_spaces,  # 6
+                        self.fix_accents,  # 7
+                        self.process_nonempty_texts1,  # 8
+                        self.process_nonempty_texts2,  # 9
+                        self.process_p_note,  # 10
+                        self.process_span_noindex_text,  # 11
+                        self.process_one_attr_correct,  # 12
+                        self.process_mix_attrs_correct,  # 13
+                        ]
+        self.members_dict = {key: value for key, value in enumerate(members_list)}
         super(ConverterSpeach, self).__init__(args)
 
     @staticmethod
     def get_steps():
         return 14
 
-    def lowercase_attrib(self, body):
-        for speech in body.iter('speech'):
+    def get_step_methods(self):
+        return self.members_dict
+
+    def lowercase_attrib(self, root):
+        for speech in root.iter('speech'):
             to_lower = False
             tmp = dict()
             # tmp = {key.lower(): value for key, value in speech.attrib.iteritems()}
@@ -114,13 +130,14 @@ class ConverterSpeach(ConverterWithSteps):
                 speech.attrib.clear()
                 speech.attrib.update(tmp)
 
-    def speach2speech(self, body):
-        for speach in body.iter('speach'):
+    def speach2speech(self, root):
+        for speach in root.iter('speach'):
             speach.tag = 'speech'
             self.count_mess('<speach> -> <speech>')
 
     # <p sp="..." [speaker="..."]>   --->  <speech ...>
-    def convert_p_sp(self, body):
+    def convert_p_sp(self, root):
+        body = root.find('body')
         name = os.path.basename(self.inpname)
         for p in body.iter('p'):
             attr = p.attrib
@@ -174,13 +191,14 @@ class ConverterSpeach(ConverterWithSteps):
                         se.remove(child)
                     self.line = -1
                 self.count_mess('sp -> actor/role')
+
     @staticmethod
     def check_empty_attr(attrib, key):
         value = attrib.get(key, None)
         return value is None or value == '' or value.isspace()
 
     def get_attr_val(self, elem, key):
-        # type: (dict, unicode) -> unicode
+        # type: (etree.Element, unicode) -> [unicode, None]
         value = elem.attrib.get(key, None)
         if value is not None and (value == '' or value.isspace() or value == '?'):
             if key != 'actor':
@@ -227,7 +245,8 @@ class ConverterSpeach(ConverterWithSteps):
         elem = etree.fromstring(text)
         return elem
 
-    def convert_lt_gt(self, body):
+    def convert_lt_gt(self, root):
+        body = root.find('body')
         for elem in body.iter():
             if elem.tag is etree.PI or elem.tag is etree.Comment:
                 continue
@@ -278,7 +297,8 @@ class ConverterSpeach(ConverterWithSteps):
             parent.insert(index, new_child)
             index += 1
 
-    def convert_distinct_nrzb(self, body):
+    def convert_distinct_nrzb(self, root):
+        body = root.find('body')
         for elem in body.iter():
             if elem.tag is etree.PI or elem.tag is etree.Comment or elem.tag == 'w':
                 continue
@@ -313,7 +333,8 @@ class ConverterSpeach(ConverterWithSteps):
             self.count_mess('extra space removed')
         return text
 
-    def remove_spaces(self, body):
+    def remove_spaces(self, root):
+        body = root.find('body')
         for elem in body.iter():
             self.line = elem.sourceline
             elem.text = self.remove_spaces_txt(elem.text)
@@ -323,7 +344,7 @@ class ConverterSpeach(ConverterWithSteps):
         if text is None:
             return text, count
         vowels = u'аеиоуыэюяАЕИОУЫЭЮЯ'
-        text = self.replace(COMBINING_GRAVE_ACCENT, COMBINING_ACUTE_ACCENT, text)
+#        text = self.replace(COMBINING_GRAVE_ACCENT, COMBINING_ACUTE_ACCENT, text)
         text = self.replace(COMBINING_CIRCUMFLEX_ACCENT, COMBINING_ACUTE_ACCENT, text)
         text = self.replace(RIGHT_SINGLE_QUOTATION_MARK, COMBINING_ACUTE_ACCENT, text)
 
@@ -333,6 +354,8 @@ class ConverterSpeach(ConverterWithSteps):
             text = text.replace(u"у'", u'у\u0301').replace(u"э'", u'э\u0301').replace(u"ю'", u'ю\u0301')
             text = text.replace(u"я'", u'я\u0301').replace(u"ы'", u'ы\u0301').replace(u"о'", u'о\u0301')
         if not is_manual:
+            text = self.replace(SIMPLE_ACCENT, COMBINING_GRAVE_ACCENT, text)
+
             return text, count
         text = self.replace(SIMPLE_ACCENT, COMBINING_ACUTE_ACCENT, text)
         pos0 = 0
@@ -351,21 +374,28 @@ class ConverterSpeach(ConverterWithSteps):
             pos0 = pos + 2
         return text, count
 
-    def fix_accents(self, body):
+    def fix_accents(self, root):
+        body = root.find('body')
         is_manual = 'manual' in self.inpname
         count = 0
         for elem in body.iter():
+            if elem.tag is etree.PI or elem.tag is etree.Comment:
+                continue
             self.line = elem.sourceline
             elem.text, count = self.fix_accent(elem.text, count, is_manual)
             elem.tail, count = self.fix_accent(elem.tail, count, is_manual)
+            if elem.tag == 'distinct':
+                elem.attrib['form'] = elem.get('form', '').replace(SIMPLE_APOSTROPHE, COMBINING_ACUTE_ACCENT)
+
         if count > 0:
-            self.count_mess('accent moved',count)
+            self.count_mess('accent moved', count)
 
     @staticmethod
     def is_comment(text):  # todo  check!
         return text in ["***"]
 
-    def process_nonempty_texts1(self, body):
+    def process_nonempty_texts1(self, root):
+        body = root.find('body')
         elem_list = list(body)
 
         for elem in elem_list:
@@ -399,7 +429,8 @@ class ConverterSpeach(ConverterWithSteps):
                         LxmlExt.disband_node(elem)
                         self.count_mess('clear <p>')
 
-    def process_nonempty_texts2(self, body):
+    def process_nonempty_texts2(self, root):
+        body = root.find('body')
         elem_list = list(body)
         if LxmlExt.is_informative(body.tail):
             LxmlExt.surround_tail(body, etree.Element("speech"))
@@ -459,7 +490,8 @@ class ConverterSpeach(ConverterWithSteps):
             text = LxmlExt.concat_text(text, elem.tail)
         return text
 
-    def process_span_noindex_text(self, body):
+    def process_span_noindex_text(self, root):
+        body = root.find('body')
         sp_list = [elem for elem in body.iter('span', 'noindex')]
         for elem in sp_list:
             if elem.getparent() is None:  # напр <noindex> внутри <span> может стереться, его нет смысла рассматривать
@@ -472,13 +504,15 @@ class ConverterSpeach(ConverterWithSteps):
             self.count_mess('clear elements in <'+elem.tag+'>')
             elem.text = text
 
-    def process_p_note(self, body):
+    def process_p_note(self, root):
+        body = root.find('body')
         for p in body.iter('p'):
             if p.attrib.get('class', '') == 'note':
                 p.tag = 'span'
                 self.count_mess('<p class="note"> -> <span class "note"')
 
-    def process_one_attr_correct(self, body):
+    def process_one_attr_correct(self, root):
+        body = root.find('body')
         for speech in body.iter('speech'):
             change = False
             for key in speech.attrib.keys():
@@ -598,7 +632,8 @@ class ConverterSpeach(ConverterWithSteps):
                 self.count_mess(mess)
         return continue_work
 
-    def process_mix_attrs_correct(self, body):
+    def process_mix_attrs_correct(self, root):
+        body = root.find('body')
         for speech in body.iter('speech'):
             prop_dict = dict()
             attrib = dict(speech.attrib)
@@ -657,40 +692,6 @@ class ConverterSpeach(ConverterWithSteps):
             speech.attrib.clear()
             speech.attrib.update(tmp)
 
-    def process_lxml_tree(self, tree):
-        self.line = -1
-        root = tree.getroot()
-        body = root.find('body')
-        if body is None:
-            self.err_proc("<body> tag not found")
-        if self.check_steps(0):
-            self.lowercase_attrib(body)
-        if self.check_steps(1):
-            self.convert_p_sp(body)
-        if self.check_steps(2):
-            self.speach2speech(body)
-        if self.check_steps(3):
-            self.convert_role2actor(body)
-        if self.check_steps(4):
-            self.convert_lt_gt(body)
-        if self.check_steps(5):
-            self.convert_distinct_nrzb(body)
-        if self.check_steps(6):
-            self.remove_spaces(body)
-        if self.check_steps(7):
-            self.fix_accents(body)
-        if self.check_steps(8):
-            self.process_nonempty_texts1(body)
-        if self.check_steps(9):
-            self.process_nonempty_texts2(body)
-        if self.check_steps(10):
-            self.process_p_note(body)
-        if self.check_steps(11):
-            self.process_span_noindex_text(body)
-        if self.check_steps(12):
-            self.process_one_attr_correct(body)
-        if self.check_steps(13):
-            self.process_mix_attrs_correct(body)
 
 
 if __name__ == '__main__':

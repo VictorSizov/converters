@@ -40,7 +40,7 @@ class ProcessorBasic(object):
 
     def lxml_err_proc(self, lxml_error):
         for entry in lxml_error.error_log:
-            self.error_processor.proc_message(entry.message, entry.file, entry.line)
+            self.error_processor.proc_message(entry.message, entry.filename, entry.line)
 
     def process_lxml_tree(self, tree):
         """ обработка xml-дерева.
@@ -93,6 +93,7 @@ class ProcessorBasic(object):
                 if files:
                     root = os.path.relpath(root, inppath)
                     paths += [os.path.join(root, f) for f in files if os.path.splitext(f)[1] in self.valid_extensions]
+        print len(paths), "file(s) found"
         return paths
 
     def process(self):

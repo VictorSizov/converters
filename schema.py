@@ -64,18 +64,23 @@ class Schema(ProcessorBasic):
         root_info = self.glob_info.get(root.tag, None)
         self.glob_info[root.tag] = self.get_info(root, root_info)
 
+    def outfile_write(self,text):
+        if isinstance(text,unicode):
+            text = text.encode(encoding='utf-8')
+        self.outfile.write(text)
+
     def put_info(self, info, shift):
-        self.outfile.write(shift)
-        self.outfile.write(info[TAG_POS])
+        self.outfile_write(shift)
+        self.outfile_write(info[TAG_POS])
         if len(info[ATTR_POS]) > 0:
             start = True
             for attr in info[ATTR_POS]:
-                self.outfile.write('{' if start else ',')
-                self.outfile.write(attr)
+                self.outfile_write('{' if start else ',')
+                self.outfile_write(attr)
                 start = False
-            self.outfile.write('}')
-        # self.outfile.write('['+to_str[info[TEXT_POS]]+', '+to_str[info[TAIL_POS]]+']')
-        self.outfile.write('\t' + os.path.relpath(info[FIRST_DOC_POS], self.common_part)+'\t\n')
+            self.outfile_write('}')
+        # self.outfile_write('['+to_str[info[TEXT_POS]]+', '+to_str[info[TAIL_POS]]+']')
+        self.outfile_write('\t' + os.path.relpath(info[FIRST_DOC_POS], self.common_part)+'\t\n')
         for value in info[ELEM_POS].values():
             self.put_info(value, shift+info[TAG_POS]+'/')
 
@@ -85,10 +90,10 @@ class Schema(ProcessorBasic):
             super(Schema, self).process()
         self.common_part = os.sep.join(self.common_part)
         with open(self.schema, 'w') as self.outfile:
-            self.outfile.write('tags sequence\texample\tcomment\n')
+            self.outfile_write('tags sequence\texample\tcomment\n')
             for value in self.glob_info.values():
                 self.put_info(value, '')
-            self.outfile.write('\n(common path of examples - '+self.common_part+')')
+            self.outfile_write('\n(common path of examples - '+self.common_part+')')
 
 
 if __name__ == '__main__':

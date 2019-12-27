@@ -49,24 +49,6 @@ class Validator(ValidatorBasic):
             return TEXT_TEXT
         return TEXT_REJECT
 
-    '''
-    def validate_text(self, root):
-        for elem in root.iter():
-            check_text()
-        is_manual = 'manual' in self.inpname
-        self.validate_outbound_text(root, 'body')
-        self.validate_outbound_text(root, 'head')
-        if is_manual:
-            self.validate_outbound_text(root, 'speech')
-
-
-    def check_wrong_sym(self,root):
-        body = root.iter('body')
-        for elem in body.iter():
-            if elem.tag is etree.PI or elem.tag is etree.Comment:
-                continue
-            self.line = elem.sourceline
-    '''
     def check_empty_tags(self, root):
         body = root.find('body')
         for elem in body.iter():
