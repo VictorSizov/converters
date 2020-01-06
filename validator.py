@@ -65,6 +65,7 @@ class Validator(ValidatorBasic):
         self.check_attr_speech(root)
         self.check_empty_tags(root)
         self.validate_text_in_tree(root)
+        self.check_distinct(root)
 
 
 

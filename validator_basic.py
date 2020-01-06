@@ -12,6 +12,7 @@ import os
 from error_processor import ProgramTerminated, expanduser
 import collections
 import string
+from lxml_ext import LxmlExt
 
 from processor_basic import ProcessorBasic
 TEXT_REJECT = 0
@@ -39,25 +40,37 @@ class ValidatorBasic(ProcessorBasic):
         try:
             val = int(value)
         except ValueError:
-            self.err_proc(ret + u'неверный формат числа')
+            self.err_proc(ret + u'wrong number format')
             return
         if key == 'age':
             if not 1 < val <= 100:
-                self.err_proc(ret + u'условие 1 < возраст < 100 не выполнено')
+                self.err_proc(ret + u'condition "1 < age < 100" has not been met')
         if key == 'birth':
             if not 1750 < val < 2019:
-                self.err_proc(ret + u'условие 1750 < дата рождения < 2019 не выполнено')
+                self.err_proc(ret + u'condition "1750 < birth date < 2019" has not been met')
 
     def check_age_birth(self, key, value):
         if '-' in value:
             values = value.split('-')
             if len(values) != 2 or values[0] == '' or values[1] == '':
-                self.err_proc(u'атрибут {0}="{1}": неверный формат числа'.format(key, value))
+                self.err_proc(u'attribute {0}="{1}": wrong number format'.format(key, value))
                 return
-            self.check_date(key, values[0], value, u'нижняя граница атрибута')
-            self.check_date(key, values[1], value, u'верхняя граница ')
+            self.check_date(key, values[0], value, u'low bound')
+            self.check_date(key, values[1], value, u'upper bound ')
         else:
-            self.check_date(key, value, value, u'атрибут ')
+            self.check_date(key, value, value, u'attribute ')
+
+    def check_distinct(self, root):
+        for distinct in root.iter('distinct'):
+            self.line = distinct.sourceline
+            form = distinct.attrib.get("form", None)
+            if form is None:
+                self.err_proc('distinct tag should have attribure "form"')
+            ln = len(distinct)
+            if ln != 0:
+                self.err_proc('distinct tag should not contain any tag')
+            if not LxmlExt.is_informative(distinct.text):
+                self.err_proc('distinct tag should contain alphanumeric text')
 
     def get_text_type(self, elem):
         raise Exception("should be rewriten in child class")
@@ -75,7 +88,7 @@ class ValidatorBasic(ProcessorBasic):
         if len(text) < 6:
             pass
         example = text.replace('\n', '\\n')
-        mess = u'Текст непосредственно внутри тэга {0}'.format(tag)
+        mess = u'Text is directly into tag {0}'.format(tag)
         self.err_proc(mess.encode('utf-8'), example.encode('utf-8'))
 
     def validate_text(self, text, elem):
@@ -114,7 +127,7 @@ class ValidatorBasic(ProcessorBasic):
             if wrong:
                 mess = u','.join("'"+s+"'" for s in sorted(list(wrong)))
                 mess = mess.replace("' '", "<space>").encode('utf-8')
-                self.err_proc("Имя файла {0} в таблице содержит недопустимые символ(ы) {1}. ".
+                self.err_proc("File name {0} in table contains wrong symbol(s) {1}. ".
                               format(path, mess))
 
     def process_row(self, row):
@@ -123,7 +136,7 @@ class ValidatorBasic(ProcessorBasic):
             nom = len(row)
             for key in restkey:
                 if key != '':
-                    self.err_proc('Строка {0} в столбце {1}, в таблице должно быть не более {2} столбцов'.format(
+                    self.err_proc('row {0} contains column {1}, table sould have no more than {2} columns'.format(
                         key, nom, len(row) - 1))
                 nom += 1
         self.line += 1
@@ -153,7 +166,7 @@ class ValidatorBasic(ProcessorBasic):
         for item, count in collections.Counter(cmp_paths_list).most_common():
             if count == 1:
                 break
-            self.err_proc('Название файла {0} повторяется в таблице {1} раз(а)'.format(item, count))
+            self.err_proc('File name {0} repeats in table  {1} time(s)'.format(item, count))
         cmp_paths_set = set(cmp_paths_list)
         self.check_names(sorted(cmp_paths_set))
         paths_set = {os.path.splitext(path.lower().replace('\\', '/'))[0] for path in paths}
@@ -162,9 +175,9 @@ class ValidatorBasic(ProcessorBasic):
             missed = cmp_paths_set.difference(paths_set)
             extra = paths_set.difference(cmp_paths_set)
             for path in missed:
-                self.err_proc("Файл {0}, указанный в {1} не найден".format(path, self.table_name))
+                self.err_proc("File  {0}, mentioned in {1} not found".format(path, self.table_name))
             for path in extra:
-                self.err_proc("Файл {0} не описан в {1}".format(path, self.table_name))
+                self.err_proc("File {0} is not mentioned in {1}".format(path, self.table_name))
         return paths
 
     def process(self):
