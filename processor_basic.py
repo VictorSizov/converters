@@ -7,6 +7,7 @@ ProcessorBasic - базовый класс для обработчика xml - �
 from lxml import etree
 
 import os
+import re
 import time
 import argparse
 from error_processor import ErrorProcessor, ProgramTerminated,expanduser
@@ -19,6 +20,7 @@ class ProcessorBasic(object):
         self.error_processor = ErrorProcessor(args.__dict__)
         self.inppath = expanduser(args.inppath)  # входные данные (папка или файл)
         self.files = expanduser(args.files)  # имя файла со списком входных файлов
+        self.filter = args.filter
         self.action = args.action if hasattr(args, 'action') else ''  # действие (зарезервировано)
         self.line = -1
         self.inpname = None
@@ -53,7 +55,7 @@ class ProcessorBasic(object):
         """
         try:
             self.line = -1
-            inpname = os.path.join(self.inppath, inpfile)
+            inpname = os.path.join(self.inppath, inpfile) if inpfile != '' else self.inppath
             tree = etree.parse(inpname)
             self.inpname = inpname
             self.process_lxml_tree(tree)
@@ -93,6 +95,13 @@ class ProcessorBasic(object):
                 if files:
                     root = os.path.relpath(root, inppath)
                     paths += [os.path.join(root, f) for f in files if os.path.splitext(f)[1] in self.valid_extensions]
+        if self.filter:
+            try:
+                ff = re.compile(self.filter)
+                paths = [path for path in paths if ff.match(path)]
+            except re.error as e:
+                self.fatal_error('error "' + e.message + '"in regular expression "' + self.filter)
+
         print len(paths), "file(s) found"
         return paths
 
@@ -144,6 +153,7 @@ def fill_arg_for_processor(description, action_description=None):
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('inppath')
     parser.add_argument('--files', default=None)
+    parser.add_argument('--filter', default=None)
     parser.add_argument('--err_report', default=None)
     parser.add_argument('--stat', default=None)
     if action_description is None:

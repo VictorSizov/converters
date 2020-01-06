@@ -17,7 +17,7 @@ COMBINING_ACUTE_ACCENT = u'\u0301'  # ◌́
 COMBINING_CIRCUMFLEX_ACCENT = u'\u0302'  # ◌̂́
 RIGHT_SINGLE_QUOTATION_MARK = u'\u2019'  # ’
 
-sex_values = {u'муж', u'жен', u'муж-жен',u'жен-муж'}
+sex_values = {u'муж', u'жен', u'муж-жен', u'жен-муж'}
 prof_values = {
     u'студент',
     u'инженер',
@@ -103,13 +103,14 @@ class ConverterSpeach(ConverterWithSteps):
                         self.process_span_noindex_text,  # 11
                         self.process_one_attr_correct,  # 12
                         self.process_mix_attrs_correct,  # 13
+                        self.space_after_distinct,  # 14
                         ]
         self.members_dict = {key: value for key, value in enumerate(members_list)}
         super(ConverterSpeach, self).__init__(args)
 
     @staticmethod
     def get_steps():
-        return 14
+        return 15
 
     def get_step_methods(self):
         return self.members_dict
@@ -692,6 +693,19 @@ class ConverterSpeach(ConverterWithSteps):
             speech.attrib.clear()
             speech.attrib.update(tmp)
 
+    def space_after_distinct(self, root):
+        for distinct in root.iter('distinct'):
+            if distinct.tail is None:
+                continue
+            if isinstance(distinct.tail, unicode):
+                if unicode.isalnum(distinct.tail[0]):
+                    distinct.tail = u' ' + distinct.tail
+            elif isinstance(distinct.tail, str):
+                if str.isalnum(distinct.tail[0]):
+                    distinct.tail = ' ' + distinct.tail
+            else:
+                print distinct.tail
+                raise Exception("logic error")
 
 
 if __name__ == '__main__':

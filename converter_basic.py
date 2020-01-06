@@ -25,7 +25,7 @@ class ConverterBasic(ProcessorBasic):
             return
         try:
             outpath = self.outpath if self.outpath is not None else self.inppath
-            outfile = os.path.join(outpath, inpfile)
+            outfile = os.path.join(outpath, inpfile) if inpfile != '' else  outpath
             outdir = os.path.dirname(outfile)
             if not os.path.exists(outdir):
                 os.makedirs(outdir)

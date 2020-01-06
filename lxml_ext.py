@@ -1,24 +1,27 @@
 # -*- Encoding: utf-8 -*-
 import lxml.etree
 import string
+import regex
 
 
 class LxmlExt:
 
-    inform = None
+    uni = regex.compile(u'\p{L}+')
 
     @staticmethod
     def form_uni_str(first, last):
         return u''.join([unichr(i) for i in range(ord(first), ord(last)+1)])
 
-
     @classmethod
     def is_informative(cls, text):
         if text is None:
             return False
-        if not isinstance(text, unicode) and not isinstance(text, str):
+        if isinstance(text, str):
+            text = text.decode('utf-8')
+        if not isinstance(text, unicode):
             raise Exception("Wrong type")
-        return not set(text).isdisjoint(cls.inform)
+        ret = cls.uni.search(text)
+        return ret is not None
 
     @classmethod
     def split_left_spaces(cls, text):
@@ -92,4 +95,3 @@ class LxmlExt:
         base.append(elem)
 
 
-LxmlExt.inform = set(string.ascii_letters+LxmlExt.form_uni_str(u'А', u'Я')+LxmlExt.form_uni_str(u'а', u'я'))
