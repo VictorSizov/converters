@@ -40,7 +40,7 @@ class Final(ConverterBasic):
                     self.err_proc('"ana" hasn\'t attribure "gr"')
                     continue
 
-                res = attr["gr"].decode('utf-8')+u',искаж'
+                res = attr["gr"].decode('utf-8')+u',distort'
                 attr["gr"] = res
             w[-1].tail = form
             LxmlExt.disband_node(distinct)
