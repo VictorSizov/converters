@@ -19,14 +19,16 @@ class ErrorProcessor(object):
         # инициализация параметров:
         self.ignore_mess_name = expanduser(kwargs.get('ignore_mess', None))
         self.ignore_mess = None
+        self.show_mess_name = expanduser(kwargs.get('show_mess', None))
+        self.show_mess = None
+        self.show_files = kwargs.get('show_files', None)
         self.stat_name = kwargs.get('stat', None)
         self.limit = kwargs.get('limit', -1)
         self.inppath = expanduser(kwargs['inppath'])
 
         self.err_report_name = expanduser(kwargs.get('err_report', None)) # имя файла для ошибок
         self.mess_counter = Counter() if self.stat_name is not None else None
-        self.f_err_name = ''
-        self.wrong_docs = 0
+        self.wrong_docs = set()
         self.err_num = 0
         self.err_report = None
         self.step = ''
@@ -71,14 +73,21 @@ class ErrorProcessor(object):
         except (OSError, IOError) as e:
             self.fatal_error("Can't open message file " + self.err_report_name)
 
-    def load_ignore_mess(self):
+    def load_mess_data(self, filename):
         try:
-            if self.ignore_mess_name is not None:
-                with open(self.ignore_mess_name, 'r') as f:
-                    self.ignore_mess=f.read().splitlines()
-                self.ignore_mess_name = None
+            if filename is not None:
+                with open(filename, 'r') as f:
+                    return f.read().splitlines()
         except (OSError, IOError) as e:
-            self.fatal_error("Can't load list of ignored messages " + self.ignore_mess_name)
+            self.fatal_error("Can't load list of ignored messages " + filename)
+
+    def load_ignore_mess(self):
+        if self.ignore_mess_name is not None and self.show_mess_name is not None:
+            self.fatal_error("You shouldn't use '--ignore_mess' and '--show_mess' together")
+        self.ignore_mess = self.load_mess_data(self.ignore_mess_name)
+        self.ignore_mess_name = None
+        self.show_mess = self.load_mess_data(self.show_mess_name)
+        self.show_mess_name = None
 
     def print_message(self, mess):
         if self.err_report is None:  # если файл для вывода сообщения не проинициализирован
@@ -93,6 +102,8 @@ class ErrorProcessor(object):
     def check_ignore(self, mess):
         if isinstance(mess, unicode):
             mess = mess.encode('utf-8')
+        if self.show_mess is not None:
+            return mess not in self.show_mess
         return self.ignore_mess is not None and mess in self.ignore_mess
 
     def proc_message(self, mess, f_name=None, line=-1, example=''):
@@ -101,9 +112,7 @@ class ErrorProcessor(object):
         self.count_mess(mess)
         full_mess = ''
         if f_name is not None:
-            if self.f_err_name != f_name:
-                self.wrong_docs += 1
-            self.f_err_name = f_name
+            self.wrong_docs.add(f_name)
             if self.inppath is not None:
                 f_name = os.path.join(self.inppath, f_name)
             full_mess = 'File "' + f_name + '"'
@@ -119,12 +128,16 @@ class ErrorProcessor(object):
         self.print_message(full_mess)
 
     def report(self):
-        if self.wrong_docs > 0:
-            mess = "errors found in {0} documents.\n".format(self.wrong_docs,)
+        if self.wrong_docs:
+            mess = "errors found in {0} documents.\n".format(len(self.wrong_docs))
             sys.stdout.write(mess)
             if self.err_report is not sys.stdout:
                 self.err_report.write(mess)
                 sys.stdout.write('See ' + self.err_report_name+'\n')
+                if self.show_files is not None:
+                    with open(self.show_files,"w") as show_files:
+                        for name in self.wrong_docs:
+                            show_files.write(name + '\n')
         if self.mess_counter:
             self.try_create_folder(self.stat_name)
             try:

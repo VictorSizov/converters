@@ -10,7 +10,7 @@ import os
 import re
 import time
 import argparse
-from error_processor import ErrorProcessor, ProgramTerminated,expanduser
+from error_processor import ErrorProcessor, ProgramTerminated, expanduser
 
 
 class ProcessorBasic(object):
@@ -63,7 +63,7 @@ class ProcessorBasic(object):
             return tree
         except (OSError, IOError) as e:
             self.error_processor.proc_message("file open/reading error '{0}'".format(inpname))
-            self.error_processor.wrong_docs += 1
+            self.error_processor.wrong_docs.add(inpname)
         except etree.LxmlError as e:
             self.lxml_err_proc(e)
 
@@ -116,7 +116,7 @@ class ProcessorBasic(object):
         try:
             d1 = time.clock()
             self.error_processor.load_ignore_mess()
-            self.error_processor.wrong_docs = 0
+            self.error_processor.wrong_docs = set()
             inppath = self.inppath
             if not os.path.exists(inppath):
                 self.fatal_error("No file or directory "+inppath+" found")
