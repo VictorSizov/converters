@@ -15,6 +15,7 @@ class ConverterBasic(ProcessorBasic):
     def __init__(self, args):
         self.outpath = expanduser(args.outpath)
         self.outcode = args.outcode
+        self.write_result = args.write_result if hasattr(args, 'write_result') else True
         super(ConverterBasic, self).__init__(args)
 
     def process_file(self, inpfile):
@@ -22,6 +23,8 @@ class ConverterBasic(ProcessorBasic):
         в выходной файл в соответствующей кодировке"""
         tree = super(ConverterBasic, self).process_file(inpfile)
         if tree is None:
+            return
+        if not self.write_result:
             return
         try:
             outpath = self.outpath if self.outpath is not None else self.inppath
@@ -91,7 +94,7 @@ class ConverterWithSteps(ConverterBasic):
         except ValueError:
             self.fatal_error(mess_prefix + 'step_mode is not convertable to int')
         if step < -1 or mess_prefix != '' and step == -1:
-            self.fatal_error( mess_prefix + 'step_mode wrong value')
+            self.fatal_error(mess_prefix + 'step_mode wrong value')
         if step > self.get_steps():
             self.fatal_error(mess_prefix + 'step_mode is too big')
         return step
@@ -114,6 +117,7 @@ def fill_arg_for_converter(description, action_description=None):
 
 if __name__ == '__main__':
     parser = fill_arg_for_converter('normalizer')
+    parser.add_argument('--no_write', dest='write_result', default=True, action='store_false')
     parser_args = parser.parse_args()
     normalizer = Normalizer(parser_args)
     normalizer.process()

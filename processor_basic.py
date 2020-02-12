@@ -43,6 +43,7 @@ class ProcessorBasic(object):
     def lxml_err_proc(self, lxml_error):
         for entry in lxml_error.error_log:
             self.error_processor.proc_message(entry.message, entry.filename, entry.line)
+        etree.clear_error_log()
 
     def process_lxml_tree(self, tree):
         """ обработка xml-дерева.
@@ -133,7 +134,7 @@ class ProcessorBasic(object):
                 i = 0
                 for p in paths:
                     i += 1
-                    if i % 250 == 0:
+                    if i % 25000 == 0:
                         print "processed ", i, "total", nn
                     self.process_file(p)
             else:

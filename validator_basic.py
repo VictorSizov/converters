@@ -14,7 +14,7 @@ import collections
 import string
 from lxml_ext import LxmlExt
 
-from processor_basic import ProcessorBasic
+from processor_basic import ProcessorBasic, fill_arg_for_processor
 TEXT_REJECT = 0
 TEXT_COMMENT = 1
 TEXT_TEXT = 2
@@ -194,4 +194,15 @@ class ValidatorBasic(ProcessorBasic):
             return super(ValidatorBasic, self).process()
         except ProgramTerminated:
             return False
+
+
+def add_arguments(title):
+    parser = fill_arg_for_processor()
+    parser.add_argument('--schema', required=True)
+    parser.add_argument('--ignore_mess', default=None)
+    parser.add_argument('--show_mess', default=None)
+    parser.add_argument('--show_files', default=None)
+    parser.add_argument('--limit', type=int, default=-1)
+    parser.add_argument('--table', default=None)
+    return parser
 

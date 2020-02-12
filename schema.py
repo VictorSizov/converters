@@ -87,7 +87,8 @@ class Schema(ProcessorBasic):
     def process(self):
         inp_paths = self.inppath.split('|')
         for self.inppath in inp_paths:
-            super(Schema, self).process()
+            if not super(Schema, self).process():
+                return
         self.common_part = os.sep.join(self.common_part)
         with open(self.schema, 'w') as self.outfile:
             self.outfile_write('tags sequence\texample\tcomment\n')

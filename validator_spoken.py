@@ -2,18 +2,18 @@
 
 import sys
 from lxml import etree
-from validator_basic import ValidatorBasic, TEXT_REJECT,TEXT_COMMENT,TEXT_TEXT
-from processor_basic import fill_arg_for_processor
+from validator_basic import ValidatorBasic, TEXT_REJECT, TEXT_COMMENT, TEXT_TEXT, add_arguments
 
 
-class Validator(ValidatorBasic):
+
+class ValidatorSpoken(ValidatorBasic):
 
     def get_attr(self, attrib, key):
         # type: (dict, unicode) -> unicode
         value = attrib.get(key, None)
         if value is not None and (value == '' or value.isspace()):
             self.err_proc(key + " attribute is empty string")
-            return None
+            return value if key == 'actor' else None
         return value
 
     def check_attr_speech(self, root):
@@ -59,7 +59,7 @@ class Validator(ValidatorBasic):
                 self.err_proc('tag "{0}" is empty'.format(elem.tag))
 
     def process_lxml_tree(self, tree):
-        if not super(Validator, self).process_lxml_tree(tree):
+        if not super(ValidatorSpoken, self).process_lxml_tree(tree):
             return False
         root = tree.getroot()
         self.check_attr_speech(root)
@@ -71,12 +71,8 @@ class Validator(ValidatorBasic):
 
 
 if __name__ == '__main__':
-    parser = fill_arg_for_processor('speech validator')
-    parser.add_argument('--schema', required=True)
-    parser.add_argument('--ignore_mess', default=None)
-    parser.add_argument('--limit', type=int, default=-1)
-    parser.add_argument('--table', default=None)
+    parser = add_arguments('speech validator')
     parser_args = parser.parse_args()
-    validator = Validator(parser_args)
+    validator = ValidatorSpoken(parser_args)
     if not validator.process() or validator.error_processor.err_num > 0:
         sys.exit(1)
