@@ -314,10 +314,6 @@ class ConverterSpeach(ConverterWithSteps):
                 parent = elem.getparent()
                 self.insert_distinct_nrzb(parent, parent.index(elem) + 1, res)
 
-    @staticmethod
-    def is_empty(text):
-        return text is None or text == '' or text.isspace()
-
     def replace(self, src, dest, text):
         text_n = text.replace(src, dest)
         if text != text_n:

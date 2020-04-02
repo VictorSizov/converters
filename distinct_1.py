@@ -6,9 +6,6 @@ from lxml_ext import LxmlExt
 
 class Distinct1(ConverterBasic):
 
-    @staticmethod
-    def is_space(text):
-        return text is None or text == '' or text.isspace()
 
     @staticmethod
     def fill_speech(tree):
@@ -24,12 +21,12 @@ class Distinct1(ConverterBasic):
             if noindex.tag == 'span' and noindex.attrib.get("class", "") in ("note", "head"):
                 noindex.tag = 'noindex'
                 noindex.attrib.clear()
-                if not self.is_space(noindex.text):
+                if not self.is_empty(noindex.text):
                     noindex.text = '[' + noindex.text + ']'
             prev = noindex.getprevious()
             if prev is None or prev.tag is etree.PI or prev.tag is etree.Comment or prev.tag != 'noindex':
                 continue
-            if self.is_space(prev.tail):
+            if self.is_empty(prev.tail):
                 txt = LxmlExt.concat_text(prev.text, prev.tail)
                 noindex.text = LxmlExt.concat_text(txt, noindex.text)
                 prev.getparent().remove(prev)

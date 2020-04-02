@@ -31,10 +31,6 @@ class ValidatorBasic(ProcessorBasic):
         self.valid_path_symbols = set(string.ascii_letters+string.digits+u"-+=_/\\.")
         super(ValidatorBasic, self).__init__(args)
 
-    @staticmethod
-    def is_space(text):
-        return text is None or text == '' or text.isspace()
-
     def check_date(self, key, value, value_src, prefix):
         ret = u'{0} {1}="{2}": '.format(prefix, key, value_src)
         try:
@@ -83,7 +79,7 @@ class ValidatorBasic(ProcessorBasic):
 
     def check_outbound_text(self, text, tag):
         """сообщение о наличии непробельного текста"""
-        if self.is_space(text):
+        if self.is_empty(text):
             return
         if len(text) < 6:
             pass
@@ -130,14 +126,14 @@ class ValidatorBasic(ProcessorBasic):
                 self.err_proc("File name {0} in table contains wrong symbol(s) {1}. ".
                               format(path, mess))
 
-    def process_row(self, row):
+    def process_row(self, row, nn):
         restkey = row.get('###', None)
         if restkey is not None:
             nom = len(row)
             for key in restkey:
-                if key != '':
+                if key is not None and key != '':
                     self.err_proc('row {0} contains column {1}, table sould have no more than {2} columns'.format(
-                        key, nom, len(row) - 1))
+                        nn+1, nom, len(row) - 1))
                 nom += 1
         self.line += 1
         return row['path'].lower()
@@ -158,7 +154,7 @@ class ValidatorBasic(ProcessorBasic):
             with open(self.table_name, 'rb') as f:
                 self.inpname, self.line = self.table_name, 1
                 dict_reader = csv.DictReader(f, delimiter=';', restkey='###', strict=True,)
-                cmp_paths_list = [self.process_row(row) for row in dict_reader]
+                cmp_paths_list = [self.process_row(row, nn) for nn, row in enumerate(dict_reader)]
                 self.inpname, self.line = None, -1
         except (OSError, IOError) as e:
             self.fatal_error("can't read data from table " + self.table_name)
@@ -197,7 +193,7 @@ class ValidatorBasic(ProcessorBasic):
 
 
 def add_arguments(title):
-    parser = fill_arg_for_processor()
+    parser = fill_arg_for_processor(title)
     parser.add_argument('--schema', required=True)
     parser.add_argument('--ignore_mess', default=None)
     parser.add_argument('--show_mess', default=None)

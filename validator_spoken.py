@@ -55,7 +55,7 @@ class ValidatorSpoken(ValidatorBasic):
             if elem.tag is etree.PI or elem.tag is etree.Comment:
                 continue
             self.line = elem.sourceline
-            if self.is_space(elem.text) and len(elem) == 0 and not elem.attrib:
+            if self.is_empty(elem.text) and len(elem) == 0 and not elem.attrib:
                 self.err_proc('tag "{0}" is empty'.format(elem.tag))
 
     def process_lxml_tree(self, tree):

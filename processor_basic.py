@@ -45,6 +45,14 @@ class ProcessorBasic(object):
             self.error_processor.proc_message(entry.message, entry.filename, entry.line)
         etree.clear_error_log()
 
+    @staticmethod
+    def is_empty(text):
+        return text is None or text == '' or text.isspace()
+
+    @staticmethod
+    def nostructured(elem):
+        return elem.tag is etree.PI or elem.tag is etree.Comment
+
     def process_lxml_tree(self, tree):
         """ обработка xml-дерева.
         В дочерних классах  должна быть реализация """
