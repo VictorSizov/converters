@@ -21,10 +21,11 @@ class ErrorProcessor(object):
         self.ignore_mess = None
         self.show_mess_name = expanduser(kwargs.get('show_mess', None))
         self.show_mess = None
-        self.show_files = kwargs.get('show_files', None)
+        self.show_files_name = kwargs.get('show_files', None)
         self.stat_name = expanduser(kwargs.get('stat', None))
         self.limit = kwargs.get('limit', -1)
         self.inppath = expanduser(kwargs['inppath'])
+        self.show_file = None
 
         self.err_report_name = expanduser(kwargs.get('err_report', None)) # имя файла для ошибок
         self.mess_counter = Counter() if self.stat_name is not None else None
@@ -106,13 +107,25 @@ class ErrorProcessor(object):
             return mess not in self.show_mess
         return self.ignore_mess is not None and mess in self.ignore_mess
 
+    def err_file_report(self, f_name):
+        if self.show_files_name is None:
+            return
+        if f_name in self.wrong_docs:
+            return
+        self.wrong_docs.add(f_name)
+        if self.show_file is None:
+            self.show_file = open(self.show_files_name, "w")
+        self.show_file.write(f_name + '\n')
+
+
     def proc_message(self, mess, f_name=None, line=-1, example=''):
         if self.check_ignore(mess):
             return
         self.count_mess(mess)
         full_mess = ''
         if f_name is not None:
-            self.wrong_docs.add(f_name)
+            # self.wrong_docs.add(f_name)
+            self.err_file_report(f_name)
             if self.inppath is not None:
                 f_name = os.path.join(self.inppath, f_name)
             full_mess = 'File "' + f_name + '"'
@@ -134,10 +147,11 @@ class ErrorProcessor(object):
             if self.err_report is not sys.stdout:
                 self.err_report.write(mess)
                 sys.stdout.write('See ' + self.err_report_name+'\n')
-                if self.show_files is not None:
-                    with open(self.show_files,"w") as show_files:
-                        for name in self.wrong_docs:
+                '''if self.show_files_name is not None:
+                    with open(self.show_files_name,"w") as show_files:
+                        for name in sorted(self.wrong_docs):
                             show_files.write(name + '\n')
+                '''
         if self.mess_counter:
             self.try_create_folder(self.stat_name)
             try:
