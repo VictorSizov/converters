@@ -11,7 +11,7 @@ def process_accent_stihi(folder=''):
     """
     name1 = '/place/ruscorpora/{0}corpora/accent/accent_stihi/tables/accent_stihi_old.csv'.format(folder)
     name2 = '/place/ruscorpora/{0}corpora/accent/accent_stihi/tables/accent_stihi.csv'.format(folder)
-    name3 = os.expanduser('~/ruscorpora_sh/convertation/accent_stihi/errfiles.txt')
+    name3 = os.path.expanduser('~/ruscorpora_sh/convertation/accent_stihi/errfiles.txt')
 
     with open(name1) as inp, open(name2, "w") as out, open(name3) as filter:
         filters = {fname.rstrip("\r\n").replace('/place/ruscorpora/corpora/accent/accent_stihi/texts/', '').
