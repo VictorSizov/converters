@@ -373,7 +373,7 @@ class ConverterSpeach(ConverterWithSteps):
 
     def fix_accents(self, root):
         body = root.find('body')
-        is_manual = 'manual' in self.inpname
+        is_manual = 'manual' in self.inpname or 'main/standard' in self.inpname
         count = 0
         for elem in body.iter():
             if elem.tag is etree.PI or elem.tag is etree.Comment:

@@ -1,3 +1,5 @@
+# -*- Encoding: utf-8 -*-
+""" Создание урезанной копии корпуса из n документов с коррекцией таблицы <corpus>.csv """
 import os
 import sys
 from shutil import copyfile, copytree,rmtree
@@ -80,7 +82,6 @@ try:
 except ValueError:
     print "argument should be integer"
     exit(1)
-# code = "windows-1251" if "-1251" in sys.argv else "utf-8"
 
 inp_path = '/place/ruscorpora/corpora/'+corpus
 if not os.path.exists(inp_path):
