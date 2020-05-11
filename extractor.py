@@ -74,18 +74,18 @@ def correct_csv(inp_path, out_path, corpus, paths):
 
 argc = len(sys.argv)
 if argc < 3:
-    print "Wrong args number -", argc
+    print("Wrong args number -", argc)
     exit(1)
 corpus = sys.argv[1]
 try:
     part = int(sys.argv[2])
 except ValueError:
-    print "argument should be integer"
+    print("argument should be integer")
     exit(1)
 
 inp_path = '/place/ruscorpora/corpora/'+corpus
 if not os.path.exists(inp_path):
-    print "wrong input path", inp_path
+    print("wrong input path", inp_path)
 out_path = '/place/ruscorpora/test_' + str(part) + '/corpora/' + corpus
 paths = copy_dir(inp_path, out_path, "/texts", part)
 copy_tree(inp_path, out_path, "/tables")

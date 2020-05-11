@@ -111,7 +111,7 @@ class ProcessorBasic(object):
             except re.error as e:
                 self.fatal_error('error "' + e.message + '"in regular expression "' + self.filter)
 
-        print len(paths), "file(s) found"
+        print(len(paths), "file(s) found")
         return paths
 
     def process(self):
@@ -143,7 +143,7 @@ class ProcessorBasic(object):
                 for p in paths:
                     i += 1
                     if i % 25000 == 0:
-                        print "processed ", i, "total", nn
+                        print("processed ", i, "total", nn)
                     self.process_file(p)
             else:
                 self.fatal_error("unknown input type")
@@ -154,7 +154,7 @@ class ProcessorBasic(object):
 
     def error_report(self, d1):
         d2 = time.clock()
-        print 'processing time', d2 - d1, 'sec'
+        print('processing time', d2 - d1, 'sec')
         self.error_processor.report()
 
 def fill_arg_for_processor(description, action_description=None):

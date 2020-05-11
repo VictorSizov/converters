@@ -86,7 +86,7 @@ def escape_xml_text(s):
 
 class ConverterSpeach(ConverterWithSteps):
 
-    re_space = re.compile(ur'   *')
+    re_space = re.compile(r'   *')
 
     def __init__(self, args):
         members_list = [self.lowercase_attrib,  # 0
@@ -237,7 +237,7 @@ class ConverterSpeach(ConverterWithSteps):
         if text.find('<noindex>') == -1 and text.find('<distinct ') == -1:
             return None
         text = text.replace(u'&', u'&amp;').replace(u'<', u'&lt;').replace(u'>', u'&gt;')
-        (text, nom) = re.subn(ur'&lt;(/?noindex|distinct\s*form\s*=\s*".*?"|/distinct)&gt;', ur'<\1>', text)
+        (text, nom) = re.subn(r'&lt;(/?noindex|distinct\s*form\s*=\s*".*?"|/distinct)&gt;', r'<\1>', text)
         if nom == 0:
             return None
         self.count_mess("restore encoded tags &lt;noindex|distinct&gt; to standard", nom)
@@ -267,7 +267,7 @@ class ConverterSpeach(ConverterWithSteps):
         if text is None:
             return None
         text0 = text
-        (text, nom) = re.subn(ur"(?:\[|{|&lt;|<)?нрзбр?ч?\.*(?:\}|&gt;|\]|>)?", u'[нрзб]', text)
+        (text, nom) = re.subn(r"(?:\[|{|&lt;|<)?нрзбр?ч?\.*(?:\}|&gt;|\]|>)?", u'[нрзб]', text)
         if nom > 0:
             self.count_mess('normalization of [нрзб]')
         need_convert = False
@@ -276,7 +276,7 @@ class ConverterSpeach(ConverterWithSteps):
             text = text.replace(u'&', u'&amp;').replace(u'<', u'&lt;').replace(u'>', u'&gt;')
             if text.find('{') != -1:
                 # try to convert  X{Y}* to <distinct form="X">Y</distinct>
-                (text, nom) = re.subn(ur"([\-ёЁА-Яа-яA-Za-z◌́]+)\s*{\*?(.*?)\*?}", ur'<distinct form="\1">\2</distinct>', text)
+                (text, nom) = re.subn(r"([\-ёЁА-Яа-яA-Za-z◌́]+)\s*{\*?(.*?)\*?}", r'<distinct form="\1">\2</distinct>', text)
                 if nom > 0:
                     self.count_mess('conversion of  X{Y}* to <distinct form="X">Y</distinct>',nom)
                     need_convert = True
@@ -693,14 +693,11 @@ class ConverterSpeach(ConverterWithSteps):
         for distinct in root.iter('distinct'):
             if distinct.tail is None:
                 continue
-            if isinstance(distinct.tail, unicode):
-                if unicode.isalnum(distinct.tail[0]):
-                    distinct.tail = u' ' + distinct.tail
-            elif isinstance(distinct.tail, str):
+            if isinstance(distinct.tail, str):
                 if str.isalnum(distinct.tail[0]):
                     distinct.tail = ' ' + distinct.tail
             else:
-                print distinct.tail
+                print(distinct.tail)
                 raise Exception("logic error")
 
 

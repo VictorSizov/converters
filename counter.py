@@ -52,8 +52,6 @@ class SymbolCounter(ProcessorBasic):
                     count = stat[1]
                     if catGr == 'L' or cat == 'Cc' or cat == 'Nd':
                         continue
-                    if isinstance(sym, unicode):
-                        sym = sym.encode(encoding='utf-8')
                     f_count.write('"{0}" {1}, {2}: {3} time(s)\n'.format(sym, cat, sym_name, count))
         except (OSError, IOError) as e:
             self.fatal_error("can't write statistics into {0}: {1}".format(self.sym_stat, e.message))

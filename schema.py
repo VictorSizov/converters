@@ -65,8 +65,8 @@ class Schema(ProcessorBasic):
         self.glob_info[root.tag] = self.get_info(root, root_info)
 
     def outfile_write(self,text):
-        if isinstance(text,unicode):
-            text = text.encode(encoding='utf-8')
+        # if isinstance(text,unicode):
+            # text = text.encode(encoding='utf-8')
         self.outfile.write(text)
 
     def put_info(self, info, shift):

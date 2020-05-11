@@ -10,7 +10,7 @@ class LxmlExt:
 
     @staticmethod
     def form_uni_str(first, last):
-        return u''.join([unichr(i) for i in range(ord(first), ord(last)+1)])
+        return u''.join([chr(i) for i in range(ord(first), ord(last)+1)])
 
     @classmethod
     def is_informative(cls, text):
@@ -18,7 +18,7 @@ class LxmlExt:
             return False
         if isinstance(text, str):
             text = text.decode('utf-8')
-        if not isinstance(text, unicode):
+        else:
             raise Exception("Wrong type")
         ret = cls.uni.search(text)
         return ret is not None

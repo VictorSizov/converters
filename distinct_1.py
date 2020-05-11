@@ -38,7 +38,7 @@ class Distinct1(ConverterBasic):
         if isinstance(text, str):
             text = text.decode('utf-8')
         sym = text[-1] if before_distinct else text[0]
-        if not unicode.isspace(sym) or sym == u'\n':
+        if not str.isspace(sym) or sym == u'\n':
             if before_distinct:
                 text += u' '
             else:
