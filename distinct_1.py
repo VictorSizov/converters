@@ -35,8 +35,8 @@ class Distinct1(ConverterBasic):
     def check_distinct_separ(text, before_distinct):
         if text is None or text == '':
             return " "
-        if isinstance(text, str):
-            text = text.decode('utf-8')
+        # if isinstance(text, str):
+            # text = text.decode('utf-8')
         sym = text[-1] if before_distinct else text[0]
         if not str.isspace(sym) or sym == u'\n':
             if before_distinct:

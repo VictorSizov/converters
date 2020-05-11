@@ -16,10 +16,10 @@ class LxmlExt:
     def is_informative(cls, text):
         if text is None:
             return False
-        if isinstance(text, str):
-            text = text.decode('utf-8')
-        else:
-            raise Exception("Wrong type")
+        # if isinstance(text, str):
+            # text = text.decode('utf-8')
+        # else:
+            # raise Exception("Wrong type")
         ret = cls.uni.search(text)
         return ret is not None
 

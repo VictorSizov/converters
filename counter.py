@@ -37,8 +37,8 @@ class SymbolCounter(ProcessorBasic):
             with open(self.sym_stat, 'w') as f_count:
                 for stat in self.get_stat():
                     sym = stat[0]
-                    if isinstance(sym, str):
-                        sym = sym.decode(encoding='utf-8')
+                    # if isinstance(sym, str):
+                        # sym = sym.decode(encoding='utf-8')
 
                     if len(sym) > 1:
                         raise Exception('logic error')
