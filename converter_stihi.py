@@ -1,14 +1,12 @@
 # -*- Encoding: utf-8 -*-
 
-import sys
-import re
-from converter_basic import ConverterBasic, fill_arg_for_converter
+from processor_basic import ProcessorBasic, fill_arg_for_processor
 
 COMBINING_GRAVE_ACCENT = u'\u0300'  # ◌̀
 COMBINING_ACUTE_ACCENT = u'\u0301'  # ◌́
 
 
-class ConverterStihi(ConverterBasic):
+class ConverterStihi(ProcessorBasic):
 
     """def check_contain_http(self, elem, check_text):
         if self.nostructured(elem):
@@ -38,13 +36,13 @@ class ConverterStihi(ConverterBasic):
         for elem in body.iter():
             if self.nostructured(elem):
                 continue
-
             elem.text = self.change_accent(elem.text)
             elem.tail = self.change_accent(elem.tail)
+        return tree
 
 
 if __name__ == '__main__':
-    parser = fill_arg_for_converter('speech converter')
+    parser = fill_arg_for_processor('speech converter', True)
     parser_args = parser.parse_args()
     converter = ConverterStihi(parser_args)
     converter.process()

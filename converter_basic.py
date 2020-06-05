@@ -4,44 +4,10 @@ ConverterBasic - базовый класс для конвертера xml - д�
 ConverterWithSteps - базовый класс для отладочного "пошагового" конвертера xml - документов.
 """
 
-from processor_basic import ProcessorBasic, fill_arg_for_processor, ProgramTerminated, expanduser
-import os
-import sys
-from lxml import etree
-import time
+from processor_basic import ProcessorBasic
 
 
-class ConverterBasic(ProcessorBasic):
-    def __init__(self, args):
-        self.outpath = expanduser(args.outpath)
-        self.outcode = args.outcode
-        self.write_result = args.write_result if hasattr(args, 'write_result') else True
-        super(ConverterBasic, self).__init__(args)
-
-    def process_file(self, inpfile):
-        """ Обработка xml - дерева и запись его
-        в выходной файл в соответствующей кодировке"""
-        tree = super(ConverterBasic, self).process_file(inpfile)
-        if tree is None:
-            return
-        if not self.write_result:
-            return
-        try:
-            outpath = self.outpath if self.outpath is not None else self.inppath
-            outfile = os.path.join(outpath, inpfile) if inpfile != '' else  outpath
-            outdir = os.path.dirname(outfile)
-            if not os.path.exists(outdir):
-                os.makedirs(outdir)
-            with open(outfile, 'w') as fout:
-                fout.write('<?xml version="1.0" encoding="{0}"?>\n'.format(self.outcode))
-                tree.write(fout, encoding=self.outcode, xml_declaration=False)
-        except (OSError, IOError) as e:
-            self.fatal_error("can't write  output file " + outfile)
-        except etree.LxmlError as e:
-            self.lxml_err_proc(e)
-
-
-class ConverterWithSteps(ConverterBasic):
+class ConverterWithSteps(ProcessorBasic):
     """пошаговый конвертер"""
     def __init__(self, args):
         super(ConverterWithSteps, self).__init__(args)
@@ -60,6 +26,7 @@ class ConverterWithSteps(ConverterBasic):
         methods = self.get_step_methods()
         for n in self.step_list:
             methods[n](root)
+        return tree
 
     def get_step_list(self, step_mode):
         step_list = []
@@ -100,24 +67,3 @@ class ConverterWithSteps(ConverterBasic):
         return step
 
 
-class Normalizer(ConverterBasic):
-    def process_lxml_tree(self, tree):
-        for elem in tree.getroot().iter():
-            tmp = sorted(elem.items())
-            elem.attrib.clear()
-            elem.attrib.update(tmp)
-
-
-def fill_arg_for_converter(description, action_description=None):
-    parser = fill_arg_for_processor(description, action_description)
-    parser.add_argument('--outpath', default=None)
-    parser.add_argument('--outcode', choices=['utf-8', 'windows-1251'], default='utf-8')
-    return parser
-
-
-if __name__ == '__main__':
-    parser = fill_arg_for_converter('normalizer')
-    parser.add_argument('--no_write', dest='write_result', default=True, action='store_false')
-    parser_args = parser.parse_args()
-    normalizer = Normalizer(parser_args)
-    normalizer.process()

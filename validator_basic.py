@@ -111,11 +111,12 @@ class ValidatorBasic(ProcessorBasic):
         """проверка соответствия xml-дерева схеме,
         вывод ошибок в случае несоответствия"""
         if self.schema.validate(tree):
-            return True
+            return tree
+
         for error in self.schema.error_log:
             self.line = error.line
             self.err_proc(error.message.encode("utf-8"))
-        return False
+        return None
 
     def check_names(self, paths):
         for path in paths:

@@ -5,6 +5,7 @@ import operator
 from lxml import etree
 import unicodedata
 
+
 class SymbolCounter(ProcessorBasic):
 
     def __init__(self, argv):
@@ -28,6 +29,7 @@ class SymbolCounter(ProcessorBasic):
             self.count_text(elem.tail)
             if elem.tag != 'span' and  elem.tag != 'noindex':
                 self.count_text(elem.text)
+        return tree
 
     def get_stat(self):
         return sorted(self.counter.items(), key=operator.itemgetter(1), reverse=True)

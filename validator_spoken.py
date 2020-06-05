@@ -5,7 +5,6 @@ from lxml import etree
 from validator_basic import ValidatorBasic, TEXT_REJECT, TEXT_COMMENT, TEXT_TEXT, add_arguments
 
 
-
 class ValidatorSpoken(ValidatorBasic):
 
     def get_attr(self, attrib, key):
@@ -60,14 +59,13 @@ class ValidatorSpoken(ValidatorBasic):
 
     def process_lxml_tree(self, tree):
         if not super(ValidatorSpoken, self).process_lxml_tree(tree):
-            return False
+            return None
         root = tree.getroot()
         self.check_attr_speech(root)
         self.check_empty_tags(root)
         self.validate_text_in_tree(root)
         self.check_distinct(root)
-
-
+        return tree
 
 
 if __name__ == '__main__':

@@ -9,7 +9,8 @@ import os
 from lxml import etree
 from lxml_ext import LxmlExt
 
-from converter_basic import ConverterWithSteps, fill_arg_for_converter
+from converter_basic import ConverterWithSteps
+from processor_basic import fill_arg_for_processor
 SIMPLE_APOSTROPHE = "'"   # code: 39, 0x27
 SIMPLE_ACCENT = "`"  # code: 96, 0x60
 COMBINING_GRAVE_ACCENT = u'\u0300'  # ◌̀
@@ -344,7 +345,6 @@ class ConverterSpeach(ConverterWithSteps):
 #        text = self.replace(COMBINING_GRAVE_ACCENT, COMBINING_ACUTE_ACCENT, text)
         text = self.replace(COMBINING_CIRCUMFLEX_ACCENT, COMBINING_ACUTE_ACCENT, text)
         text = self.replace(RIGHT_SINGLE_QUOTATION_MARK, COMBINING_ACUTE_ACCENT, text)
-
 
         if text.find("'") != -1:
             text = text.replace(u"а'", u'а\u0301').replace(u"е'", u'е\u0301').replace(u"и'", u'и\u0301')
@@ -702,7 +702,7 @@ class ConverterSpeach(ConverterWithSteps):
 
 
 if __name__ == '__main__':
-    parser = fill_arg_for_converter('speech converter')
+    parser = fill_arg_for_processor('speech converter')
     parser.add_argument('--step_mode', default=str(-1))
     parser_args = parser.parse_args()
     converter = ConverterSpeach(parser_args)

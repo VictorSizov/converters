@@ -1,7 +1,6 @@
 # -*- Encoding: utf-8 -*-
 
 import sys
-from lxml import etree
 from validator_basic import ValidatorBasic, add_arguments
 
 
@@ -19,7 +18,7 @@ class ValidatorStihi(ValidatorBasic):
 
     def process_lxml_tree(self, tree):
         if not super(ValidatorStihi, self).process_lxml_tree(tree):
-            return False
+            return None
         root = tree.getroot()
         for para in root.iter('p'):
             if para is None:
@@ -32,6 +31,7 @@ class ValidatorStihi(ValidatorBasic):
             for elem in para.iter():
                 self.check_contain_http(elem, True)
                 self.check_contain_http(elem, False)
+        return tree
 
 
 if __name__ == '__main__':

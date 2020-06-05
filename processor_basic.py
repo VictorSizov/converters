@@ -15,6 +15,8 @@ from error_processor import ErrorProcessor, ProgramTerminated, expanduser
 
 class ProcessorBasic(object):
 
+    valid_extensions = ('.xml', '.xhtml')
+
     def __init__(self, args):
         # инициализация параметров:
         self.error_processor = ErrorProcessor(args.__dict__)
@@ -24,7 +26,9 @@ class ProcessorBasic(object):
         self.action = args.action if hasattr(args, 'action') else ''  # действие (зарезервировано)
         self.line = -1
         self.inpname = None
-
+        self.outpath = expanduser(args.outpath)
+        self.outcode = 'utf-8'
+        self.rewrite = args.rewrite
 
     def count_mess(self, mess, num=1):
         self.error_processor.count_mess(mess, num)
@@ -62,23 +66,29 @@ class ProcessorBasic(object):
         """ Получение дерева для xml-файла и вызов функции его обработки
             если inpfile - relative path, он конкатенируются с inppath
         """
+        self.line = -1
+        inpname = os.path.join(self.inppath, inpfile) if inpfile != '' else self.inppath
         try:
-            self.line = -1
-            inpname = os.path.join(self.inppath, inpfile) if inpfile != '' else self.inppath
             tree = etree.parse(inpname)
             self.inpname = inpname
-            self.process_lxml_tree(tree)
+            tree = self.process_lxml_tree(tree)
             self.inpname = ""
-            return tree
+            if not self.outpath:
+                if not self.rewrite:
+                    return True
+                self.outpath = self.inppath
+            outfile = os.path.join(self.outpath, inpfile) if inpfile != '' else self.outpath
+            outdir = os.path.dirname(outfile)
+            if not os.path.exists(outdir):
+                os.makedirs(outdir)
+            tree.write(outfile, encoding='utf-8', xml_declaration=False)
+            return True
         except (OSError, IOError) as e:
             self.error_processor.proc_message("file open/reading error '{0}'".format(inpname))
             self.error_processor.wrong_docs.add(inpname)
         except etree.LxmlError as e:
             self.lxml_err_proc(e)
-
-        return None
-
-    valid_extensions = ('.xml', '.xhtml')
+        return False
 
     def get_paths(self, inppath):
         """ Получение списка xnl-файлов для обработки
@@ -123,7 +133,7 @@ class ProcessorBasic(object):
             Если inppath - файл, то он один будет обработан self.process_file()
         """
         try:
-            d1 = time.clock()
+            d1 = time.perf_counter()
             self.error_processor.load_ignore_mess()
             self.error_processor.wrong_docs = set()
             inppath = self.inppath
@@ -153,11 +163,11 @@ class ProcessorBasic(object):
             return False
 
     def error_report(self, d1):
-        d2 = time.clock()
+        d2 = time.perf_counter()
         print('processing time', d2 - d1, 'sec')
         self.error_processor.report()
 
-def fill_arg_for_processor(description, action_description=None):
+def fill_arg_for_processor(description, action_description=None, default_rewrite=False):
     """Вспомогательная функция для описания параметров программы """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('inppath')
@@ -165,7 +175,25 @@ def fill_arg_for_processor(description, action_description=None):
     parser.add_argument('--filter', default=None)
     parser.add_argument('--err_report', default=None)
     parser.add_argument('--stat', default=None)
+    parser.add_argument('--outpath', default=None)
+    parser.add_argument('--rewrite', default=default_rewrite, action='store_true')
     if action_description is None:
         action_description = {'default': None}
     parser.add_argument('--action', **action_description)
     return parser
+
+
+class Normalizer(ProcessorBasic):
+    def process_lxml_tree(self, tree):
+        for elem in tree.getroot().iter():
+            tmp = sorted(elem.items())
+            elem.attrib.clear()
+            elem.attrib.update(tmp)
+        return tree
+
+
+if __name__ == '__main__':
+    parser = fill_arg_for_processor('normalizer')
+    parser_args = parser.parse_args()
+    normalizer = Normalizer(parser_args)
+    normalizer.process()

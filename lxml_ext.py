@@ -1,6 +1,4 @@
 # -*- Encoding: utf-8 -*-
-import lxml.etree
-import string
 import regex
 
 

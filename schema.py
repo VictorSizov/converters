@@ -1,9 +1,7 @@
 # -*- Encoding: utf-8 -*-
-''' Генерация общей схемы для документов выбранного корпуса. Схема генерируется в пользовательском формате'''
+""" Генерация общей схемы для документов выбранного корпуса. Схема генерируется в пользовательском формате"""
 
-import re
 import os
-import sys
 from lxml import etree
 
 from processor_basic import ProcessorBasic, fill_arg_for_processor
@@ -63,10 +61,11 @@ class Schema(ProcessorBasic):
         root = tree.getroot()
         root_info = self.glob_info.get(root.tag, None)
         self.glob_info[root.tag] = self.get_info(root, root_info)
+        return tree
 
-    def outfile_write(self,text):
+    def outfile_write(self, text):
         # if isinstance(text,unicode):
-            # text = text.encode(encoding='utf-8')
+        #   text = text.encode(encoding='utf-8')
         self.outfile.write(text)
 
     def put_info(self, info, shift):
