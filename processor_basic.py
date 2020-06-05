@@ -81,7 +81,7 @@ class ProcessorBasic(object):
             outdir = os.path.dirname(outfile)
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
-            tree.write(outfile, encoding='utf-8', xml_declaration=False)
+            tree.write(outfile, encoding='utf-8', xml_declaration=True)
             return True
         except (OSError, IOError) as e:
             self.error_processor.proc_message("file open/reading error '{0}'".format(inpname))
