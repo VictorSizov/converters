@@ -6,6 +6,18 @@ from shutil import copyfile, copytree,rmtree
 import time
 import csv
 
+def get_paths(inppath):
+    paths = []
+    valid_extensions = ('.xml', '.xhtml','.tgt')
+    for root, dirs, files in os.walk(inppath, followlinks=True):
+        parts = os.path.split(root)
+        if parts[-1] == '.svn':
+            continue
+        if files:
+            root = os.path.relpath(root, inppath)
+            paths += [os.path.join(root, f) for f in files if os.path.splitext(f)[1] in valid_extensions]
+    return paths
+
 
 def copy_dir(inp_base_path, out_base_path, proc_path, part):
     inp_base_path += proc_path
@@ -15,12 +27,7 @@ def copy_dir(inp_base_path, out_base_path, proc_path, part):
     if os.path.exists(out_base_path):
         rmtree(out_base_path)
         time.sleep(.1)
-    os.chdir(inp_base_path)
-    paths = []
-    for root, dirs, files in os.walk('.'):
-        if files:
-            root = root[2:]
-            paths += [os.path.join(root, f) for f in files]
+    paths = get_paths(inp_base_path)
     if part != 0:
         lpaths = len(paths)
         bound = lpaths
@@ -59,11 +66,11 @@ def correct_csv(inp_path, out_path, corpus, paths):
     out_name = "{0}/tables/{1}.csv".format(out_path, corpus)
     tab_delim = ['poetic']
     paths_set = {p.split('.')[0] for p in paths}
-    delim = '\t' if corpus == 'poetic' else ';'
-    with open(inp_name, 'rb') as fin, open(out_name, 'wb') as fout:
+    delim = ';'
+    with open(inp_name, 'r') as fin, open(out_name, 'w') as fout:
         reader = csv.reader(fin, delimiter=delim)
         writer = csv.writer(fout,  delimiter=delim)
-        writer.writerow(reader.next())
+        writer.writerow(reader.__next__())
         for row in reader:
             row_0 = row[0].split('.')[0]
             if row_0 in paths_set:
@@ -71,6 +78,7 @@ def correct_csv(inp_path, out_path, corpus, paths):
                 paths_set.remove(row_0)
     if len(paths_set) > 0:
         paths_set = paths_set
+
 
 argc = len(sys.argv)
 if argc < 3:
@@ -87,7 +95,11 @@ inp_path = '/place/ruscorpora/corpora/'+corpus
 if not os.path.exists(inp_path):
     print("wrong input path", inp_path)
 out_path = '/place/ruscorpora/test_' + str(part) + '/corpora/' + corpus
-paths = copy_dir(inp_path, out_path, "/texts", part)
+if argc == 3:
+    paths = copy_dir(inp_path, out_path, "/texts", part)
+elif sys.argv[3] == "--correct":
+    paths = get_paths(out_path+'/texts')
+
 copy_tree(inp_path, out_path, "/tables")
 copy_tree(inp_path, out_path, "/meta")
 correct_csv(inp_path, out_path, corpus, paths)
