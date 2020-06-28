@@ -57,6 +57,12 @@ class ProcessorBasic(object):
     def nostructured(elem):
         return elem.tag is etree.PI or elem.tag is etree.Comment
 
+    def set_line_info(self, elem=None):
+        if elem is None or elem.tag is etree.PI or elem.tag is etree.Comment:
+            self.line = -1
+        else:
+            self.line = elem.sourceline
+
     def process_lxml_tree(self, tree):
         """ обработка xml-дерева.
         В дочерних классах  должна быть реализация """
