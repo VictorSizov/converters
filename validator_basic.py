@@ -85,7 +85,7 @@ class ValidatorBasic(ProcessorBasic):
             pass
         example = text.replace('\n', '\\n')
         mess = u'Text is directly into tag {0}'.format(tag)
-        self.err_proc(mess.encode('utf-8'), example.encode('utf-8'))
+        self.err_proc(mess, example)
 
     def validate_text(self, text, elem):
         if text is None:
@@ -115,15 +115,15 @@ class ValidatorBasic(ProcessorBasic):
 
         for error in self.schema.error_log:
             self.line = error.line
-            self.err_proc(error.message.encode("utf-8"))
+            self.err_proc(error.message)
         return None
 
     def check_names(self, paths):
         for path in paths:
-            wrong = set(path.decode('utf-8')).difference(self.valid_path_symbols)
+            wrong = set(path).difference(self.valid_path_symbols)
             if wrong:
                 mess = u','.join("'"+s+"'" for s in sorted(list(wrong)))
-                mess = mess.replace("' '", "<space>").encode('utf-8')
+                mess = mess.replace("' '", "<space>")
                 self.err_proc("File name {0} in table contains wrong symbol(s) {1}. ".
                               format(path, mess))
 
@@ -152,7 +152,7 @@ class ValidatorBasic(ProcessorBasic):
         if self.table_name is None:
             return paths
         try:
-            with open(self.table_name, 'rb') as f:
+            with open(self.table_name, 'r', encoding="utf-8") as f:
                 self.inpname, self.line = self.table_name, 1
                 dict_reader = csv.DictReader(f, delimiter=';', restkey='###', strict=True,)
                 cmp_paths_list = [self.process_row(row, nn) for nn, row in enumerate(dict_reader)]

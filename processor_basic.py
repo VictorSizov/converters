@@ -14,9 +14,7 @@ from error_processor import ErrorProcessor, ProgramTerminated, expanduser
 
 
 class ProcessorBasic(object):
-
     valid_extensions = ('.xml', '.xhtml')
-
     def __init__(self, args):
         # инициализация параметров:
         self.error_processor = ErrorProcessor(args.__dict__)

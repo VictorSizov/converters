@@ -62,6 +62,7 @@ class ErrorProcessor(object):
     def open_log(self,):
         try:
             if self.err_report_name is None:
+                sys.stdout.reconfigure(encoding='utf-8')
                 self.err_report = sys.stdout
                 # sys.stdout = open(os.devnull, 'w')
             else:
@@ -70,7 +71,7 @@ class ErrorProcessor(object):
                     (err_report_name, ext) = os.path.splitext(err_report_name)
                     err_report_name += str(self.step) + ext
                 self.try_create_folder(err_report_name)
-                self.err_report = open(err_report_name, 'w')
+                self.err_report = open(err_report_name, 'w', encoding="utf-8")
         except (OSError, IOError) as e:
             self.fatal_error("Can't open message file " + self.err_report_name)
 
@@ -147,15 +148,10 @@ class ErrorProcessor(object):
             if self.err_report is not sys.stdout:
                 self.err_report.write(mess)
                 sys.stdout.write('See ' + self.err_report_name+'\n')
-                '''if self.show_files_name is not None:
-                    with open(self.show_files_name,"w") as show_files:
-                        for name in sorted(self.wrong_docs):
-                            show_files.write(name + '\n')
-                '''
         if self.mess_counter:
             self.try_create_folder(self.stat_name)
             try:
-                with open(self.stat_name, 'w') as f_count:
+                with open(self.stat_name, 'w', encoding="utf-8") as f_count:
                     for err in self.mess_counter.most_common():
                         err_txt = err[0]
                         # if isinstance(err_txt, unicode):
