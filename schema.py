@@ -64,9 +64,7 @@ class Schema(ProcessorBasic):
         return tree
 
     def outfile_write(self, text):
-        # if isinstance(text,unicode):
-        #   text = text.encode(encoding='utf-8')
-        self.outfile.write(text)
+         self.outfile.write(text)
 
     def put_info(self, info, shift):
         self.outfile_write(shift)

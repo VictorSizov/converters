@@ -94,16 +94,12 @@ class ErrorProcessor(object):
     def print_message(self, mess):
         if self.err_report is None:  # если файл для вывода сообщения не проинициализирован
             self.open_log()
-        # if isinstance(mess, unicode):
-            # mess = mess.encode(encoding='utf-8')
         self.err_report.write(mess+'\n')
         self.err_num += 1
         if self.limit != -1 and self.limit <= self.err_num:
             self.fatal_error('Message number exceed '+str(self.limit))
 
     def check_ignore(self, mess):
-        # if isinstance(mess, unicode):
-            # mess = mess.encode('utf-8')
         if self.show_mess is not None:
             return mess not in self.show_mess
         return self.ignore_mess is not None and mess in self.ignore_mess
@@ -154,8 +150,6 @@ class ErrorProcessor(object):
                 with open(self.stat_name, 'w', encoding="utf-8") as f_count:
                     for err in self.mess_counter.most_common():
                         err_txt = err[0]
-                        # if isinstance(err_txt, unicode):
-                            # err_txt = err_txt.encode(encoding='utf-8')
                         f_count.write(err_txt + ': ' + str(err[1]) + ' time(s)\n')
             except Exception as e:
                 self.fatal_error("can't write statistics into " + self.stat_name)
