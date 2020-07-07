@@ -1,0 +1,20 @@
+Element 'br': This element is not expected. Expected is one of ( span, distinct, noindex, p ).
+tag "speech" in cinema/theater/reading document hasn't actor and role attributes
+tag "speech" in non-cinema/theater/reading document hasn't actor attribute
+tag speach in non-cinema/theater/reading document has 'role' and 'actor' attributes
+Element 'br': This element is not expected.
+Element 'p': This element is not expected.
+Element 'sup': This element is not expected. Expected is one of ( span, distinct, noindex, p ).
+actor attribute is empty string
+Text is directly into tag speech
+Text is directly into tag head
+Text is directly into tag body
+Text is directly into tag title
+Element 'sup': This element is not expected.
+Element 'em': This element is not expected. Expected is one of ( span, distinct, noindex, p ).
+Element 'em': This element is not expected.
+attribute age="6-": wrong number format
+Element 'i': This element is not expected. Expected is one of ( span, distinct, noindex, p ).
+Element 'meta': This element is not expected. Expected is one of ( speech, span, noindex ).
+Element 'verse': This element is not expected.
+Element 'distinct': This element is not expected. Expected is ( br ).

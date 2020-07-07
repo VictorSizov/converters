@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="common.xsd"/>
+  <xs:element name="html" type="htmlType"/>
+
+ <xs:complexType name="speechType" mixed="true">
+    <xs:complexContent>
+      <xs:extension base="speechTypeBasic">
+        <xs:choice maxOccurs="unbounded" minOccurs="0">
+          <xs:element type="spanType" name="span"/>
+          <xs:element type="distinctType" name="distinct"/>
+          <xs:element type="xs:normalizedString" name="noindex"/>
+          <xs:element type="pVerseType" name="p"/>
+        </xs:choice>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="bodyType" mixed="true">
+    <xs:choice maxOccurs="unbounded">
+      <xs:element type="speechType" name="speech"/>
+      <xs:element type="spanType" name="span"/>
+      <xs:element type="xs:normalizedString" name="noindex"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="htmlType">
+    <xs:sequence>
+      <xs:element type="headType" name="head"/>
+      <xs:element type="bodyType" name="body"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

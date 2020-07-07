@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="metaType">
+    <xs:attribute type="xs:string" name="content" use="required"/>
+    <xs:attribute type="xs:string" name="name" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="headType" mixed="true">
+    <xs:choice  maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="title"/>
+      <xs:element type="metaType" name="meta"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:simpleType name="sexType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="муж" />
+      <xs:enumeration value="жен" />
+      <xs:enumeration value="муж-жен" />
+      <xs:enumeration value="жен-муж" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!--xs:simpleType name="ageType">
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="1"/>
+      <xs:maxInclusive value="100"/>
+    </xs:restriction>
+  </xs:simpleType-->
+
+  <!--xs:simpleType name="birthType">
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="1750"/>
+      <xs:maxInclusive value="2010"/>
+    </xs:restriction>
+  </xs:simpleType-->
+
+  <xs:complexType name="speechTypeBasic" mixed="true">
+    <xs:attribute type="xs:normalizedString" name="actor"/>
+    <xs:attribute type="xs:normalizedString" name="profession"/>
+    <xs:attribute type="sexType" name="sex"/>
+    <xs:attribute type="xs:normalizedString" name="age"/>
+    <xs:attribute type="xs:normalizedString" name="birth"/>
+    <xs:attribute type="xs:normalizedString" name="role"/>
+  </xs:complexType>
+
+  <xs:simpleType name="spanClassType" >
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="note" />
+      <xs:enumeration value="head" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="spanType">
+    <xs:simpleContent>
+      <xs:extension base="xs:normalizedString">
+          <xs:attribute type="spanClassType" name="class" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="distinctType">
+    <xs:simpleContent>
+      <xs:extension base="xs:token">
+          <xs:attribute type="xs:string" name="form" use="required" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="pVerseType" mixed="true">
+    <xs:sequence>
+      <xs:element name="br" type="xs:string" fixed=""/>
+    </xs:sequence>
+    <xs:attribute type="xs:string" name="class" fixed="verse" use="required"/>
+  </xs:complexType>
+
+</xs:schema>

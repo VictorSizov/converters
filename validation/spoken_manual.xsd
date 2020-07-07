@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="common.xsd"/>
+  <xs:element name="html" type="htmlType" />
+
+  <xs:complexType name="anaType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="gr" use="required"/>
+        <xs:attribute type="xs:string" name="lex" use="required"/>
+        <xs:attribute type="xs:string" name="joined"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="wType" mixed="true">
+    <xs:sequence>
+      <xs:element type="anaType" name="ana" maxOccurs="2"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="seType" mixed="true">
+    <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element type="wType" name="w"/>
+        <xs:element type="spanType" name="span"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="speechType" mixed="true">
+    <xs:complexContent>
+      <xs:extension base="speechTypeBasic">
+        <xs:choice maxOccurs="unbounded" minOccurs="0">
+          <xs:element type="seType" name="se" maxOccurs="unbounded" minOccurs="0"/>
+          <xs:element type="spanType" name="span"/>
+        </xs:choice>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="bodyType" mixed="true">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="speechType" name="speech"/>
+      <xs:element type="spanType" name="span"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="htmlType">
+    <xs:sequence>
+      <xs:element type="headType" name="head"/>
+      <xs:element type="bodyType" name="body"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
