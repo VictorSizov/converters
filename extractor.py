@@ -2,13 +2,14 @@
 """ Создание урезанной копии корпуса из n документов с коррекцией таблицы <corpus>.csv """
 import os
 import sys
-from shutil import copyfile, copytree,rmtree
+from shutil import copyfile, copytree, rmtree
 import time
 import csv
 
+
 def get_paths(inppath):
     paths = []
-    valid_extensions = ('.xml', '.xhtml','.tgt')
+    valid_extensions = ('.xml', '.xhtml', '.tgt')
     for root, dirs, files in os.walk(inppath, followlinks=True):
         parts = os.path.split(root)
         if parts[-1] == '.svn':
@@ -31,7 +32,7 @@ def copy_dir(inp_base_path, out_base_path, proc_path, part):
     if part != 0:
         lpaths = len(paths)
         bound = lpaths
-        step = lpaths / part
+        step = int(lpaths / part)
         if step > 0:
             if step * part < lpaths:
                 bound = step * part

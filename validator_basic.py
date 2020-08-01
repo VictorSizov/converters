@@ -9,6 +9,7 @@ ValidatorBasic - базовый класс для валидаторов,
 from lxml import etree
 import csv
 import os
+import sys
 from error_processor import ProgramTerminated, expanduser
 import collections
 import string
@@ -23,13 +24,22 @@ TEXT_TEXT = 2
 class ValidatorBasic(ProcessorBasic):
 
     wrong_symbols = '{}'
+    # valid_filename_symbols = set(string.ascii_letters+string.digits+"-+._/\\")
 
     def __init__(self, args):
-        """инициализация имени схемы"""
-        self.schema_name = expanduser(args.schema)
-        self.table_name = expanduser(args.table)
-        self.valid_path_symbols = set(string.ascii_letters+string.digits+u"-+=_/\\.")
         super(ValidatorBasic, self).__init__(args)
+
+        root = expanduser(self.inppaths)
+        if root.find(';') != -1:
+            self.fatal_error("{0} contains ';'".format(root))
+        self.inppaths = os.path.join(root, "texts")
+        name = os.path.basename(root)
+        self.table_name = os.path.join(root, "tables", name+".csv")
+        self.corp_root = os.path.dirname(root)
+        """инициализация имени схемы"""
+        schema_name = os.path.join(root, "table", name+".xsd")
+        self.schema_name = schema_name if os.path.exists(schema_name) else None
+        self.valid_path_symbols = set(string.ascii_letters+string.digits+u"-+=_/\\.")
 
     def check_date(self, key, value, value_src, prefix):
         ret = u'{0} {1}="{2}": '.format(prefix, key, value_src)
@@ -110,17 +120,31 @@ class ValidatorBasic(ProcessorBasic):
     def process_lxml_tree(self, tree):
         """проверка соответствия xml-дерева схеме,
         вывод ошибок в случае несоответствия"""
-        if self.schema.validate(tree):
-            return tree
+        if self.schema:
+            if self.schema.validate(tree):
+                return tree
 
-        for error in self.schema.error_log:
-            self.line = error.line
-            self.err_proc(error.message.encode("utf-8"))
+            for error in self.schema.error_log:
+                self.line = error.line
+                self.err_proc(error.message.encode("utf-8"))
+        else:
+            super().process_lxml_tree(tree)
         return None
+
+    def process_file(self, inpfile):
+        self.line = -1
+        url = os.path.join(self.inppath, inpfile) if inpfile != '' else self.inppath
+        url = os.path.relpath(url, self.corp_root)
+        url_utf8 = url.encode('utf8')
+        if len(url_utf8) > 235:
+            self.line = -1
+            self.err_proc("s_url '{0}', generated from filename, is too long".format(url))
+        return super().process_file(inpfile)
+
 
     def check_names(self, paths):
         for path in paths:
-            wrong = set(path.decode('utf-8')).difference(self.valid_path_symbols)
+            wrong = set(path).difference(self.valid_path_symbols)
             if wrong:
                 mess = u','.join("'"+s+"'" for s in sorted(list(wrong)))
                 mess = mess.replace("' '", "<space>").encode('utf-8')
@@ -152,13 +176,22 @@ class ValidatorBasic(ProcessorBasic):
         if self.table_name is None:
             return paths
         try:
-            with open(self.table_name, 'rb') as f:
+            with open(self.table_name, 'r') as f:
                 self.inpname, self.line = self.table_name, 1
                 dict_reader = csv.DictReader(f, delimiter=';', restkey='###', strict=True,)
                 cmp_paths_list = [self.process_row(row, nn) for nn, row in enumerate(dict_reader)]
                 self.inpname, self.line = None, -1
         except (OSError, IOError) as e:
             self.fatal_error("can't read data from table " + self.table_name)
+        except csv.Error as ee:
+            nn = 1
+            try:
+                with open(self.table_name, 'r') as f:
+                    dict_reader2 = csv.DictReader(f, delimiter=';', restkey='###', strict=True, )
+                    for str in dict_reader2:
+                        nn+=1
+            except csv.Error as ee:
+                self.fatal_error("wrong string {0} in table {1}. Exception {2}".format(nn, self.table_name,ee))
         #  проверка на наличие дублей
         for item, count in collections.Counter(cmp_paths_list).most_common():
             if count == 1:
@@ -180,14 +213,17 @@ class ValidatorBasic(ProcessorBasic):
     def process(self):
         """загрузка схемы, обработка файлов, вывод статистики ошибок"""
         try:
-            try:
-                tree = etree.parse(self.schema_name)
-                self.schema = etree.XMLSchema(tree)
-            except (OSError, IOError):
-                self.fatal_error("Can't load xsd scheme " + self.schema_name)
-            except etree.LxmlError as e:
-                err_log = list(e.error_log)
-                self.fatal_error('file {0}: {1}'.format(self.schema_name, e.message))
+            if self.schema_name:
+                try:
+                    tree = etree.parse(self.schema_name)
+                    self.schema = etree.XMLSchema(tree)
+                except (OSError, IOError):
+                    self.fatal_error("Can't load xsd scheme " + self.schema_name)
+                except etree.LxmlError as e:
+                    err_log = list(e.error_log)
+                    self.fatal_error('file {0}: {1}'.format(self.schema_name, e.message))
+            else:
+                self.schema = None
             return super(ValidatorBasic, self).process()
         except ProgramTerminated:
             return False
@@ -195,11 +231,17 @@ class ValidatorBasic(ProcessorBasic):
 
 def add_arguments(title):
     parser = fill_arg_for_processor(title)
-    parser.add_argument('--schema', required=True)
     parser.add_argument('--ignore_mess', default=None)
     parser.add_argument('--show_mess', default=None)
     parser.add_argument('--show_files', default=None)
     parser.add_argument('--limit', type=int, default=-1)
-    parser.add_argument('--table', default=None)
     return parser
+
+if __name__ == '__main__':
+    parser = add_arguments('validator')
+    parser_args = parser.parse_args()
+    validator = ValidatorBasic(parser_args)
+    if not validator.process() or validator.error_processor.err_num > 0:
+        sys.exit(1)
+
 

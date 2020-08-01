@@ -20,7 +20,8 @@ class ProcessorBasic(object):
     def __init__(self, args):
         # инициализация параметров:
         self.error_processor = ErrorProcessor(args.__dict__)
-        self.inppath = expanduser(args.inppath)  # входные данные (папка или файл)
+        self.inppaths = expanduser(args.inppath)  # входные данные (папка или файл)
+        self.inppath = ''
         self.files = expanduser(args.files)  # имя файла со списком входных файлов
         self.filter = args.filter
         self.action = args.action if hasattr(args, 'action') else ''  # действие (зарезервировано)
@@ -64,9 +65,11 @@ class ProcessorBasic(object):
             self.line = elem.sourceline
 
     def process_lxml_tree(self, tree):
-        """ обработка xml-дерева.
-        В дочерних классах  должна быть реализация """
-        raise Exception('you should rewrite this function in derived class')
+        for elem in tree.getroot().iter():
+            tmp = sorted(elem.items())
+            elem.attrib.clear()
+            elem.attrib.update(tmp)
+        return tree
 
     def process_file(self, inpfile):
         """ Получение дерева для xml-файла и вызов функции его обработки
@@ -142,27 +145,28 @@ class ProcessorBasic(object):
             d1 = time.perf_counter()
             self.error_processor.load_ignore_mess()
             self.error_processor.wrong_docs = set()
-            inppath = self.inppath
-            if not os.path.exists(inppath):
-                self.fatal_error("No file or directory "+inppath+" found")
-            check_path = inppath
-            if os.path.islink(inppath):
-                check_path = os.path.realpath(inppath)
-            if os.path.isfile(check_path):
-                if self.files is not None:
-                    self.fatal_error("if input is file name, --files is not valid")
-                self.process_file('')
-            elif os.path.isdir(check_path):
-                paths = self.get_paths(inppath)
-                nn = len(paths)
-                i = 0
-                for p in paths:
-                    i += 1
-                    if i % 25000 == 0:
-                        print("processed ", i, "total", nn)
-                    self.process_file(p)
-            else:
-                self.fatal_error("unknown input type")
+            for self.inppath in self.inppaths.split(';'):
+                inppath = self.inppath
+                if not os.path.exists(inppath):
+                    self.fatal_error("No file or directory "+inppath+" found")
+                check_path = inppath
+                if os.path.islink(inppath):
+                    check_path = os.path.realpath(inppath)
+                if os.path.isfile(check_path):
+                    if self.files is not None:
+                        self.fatal_error("if input is file name, --files is not valid")
+                    self.process_file('')
+                elif os.path.isdir(check_path):
+                    paths = self.get_paths(inppath)
+                    nn = len(paths)
+                    i = 0
+                    for p in paths:
+                        i += 1
+                        if i % 250 == 0:
+                            print("processed ", i, "total", nn)
+                        self.process_file(p)
+                else:
+                    self.fatal_error("unknown input type")
             self.error_report(d1)
             return True
         except ProgramTerminated:
