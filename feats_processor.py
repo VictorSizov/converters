@@ -48,8 +48,10 @@ class FeatsChecker(ProcessorBasic):
             '间[': '间[jiān]',
             '项[': '项[xiàng]'
         }
-        self.punct=Counter()
-        self.whites = {u' ',u'\u3000'}
+        self.changes_zh=Counter()
+        self.changes_zh1=Counter()
+        self.whites = {u' ', u'\u3000'}
+        self.langs = set()
 
     '''
     Проверка допустимых морф. признаков
@@ -163,28 +165,34 @@ class FeatsChecker(ProcessorBasic):
         root = tree.getroot()
         for se in root.iter('se'):
             self.set_line_info(se)
-            lang = se.get('lang', '')
-            '''
+            lang = se.get('lang', '?')
             if lang == 'zh' or lang == 'zh2':
-                for w in se.iter('w'):
-                    if w is not se[-1]:
-                        if lang == 'zh' and w.tail and w.tail and w.tail == '\n':
-                            w.tail = None
-                        if lang == 'zh2' and not w.tail:
-                            w.tail = ' '
-                repl = (u'\u3000', u' ') if lang == 'zh2' else (u' ', u'\u3000')
+                changes = self.changes_zh if lang == 'zh' else self.changes_zh1
                 texts = se.xpath(".//text()")
                 for txt in texts:
-                    if txt.find(repl[0]) != -1:
-                        parent = txt.getparent()
-                        text_n = txt.replace(repl[0], repl[1])
+                    parent = txt.getparent()
+                    txt_n = ''
+                    if lang == 'zh':
+                        txt_n = txt.replace(' ', u'\u3000')
+                        if txt_n == '\n':
+                            txt_n = ''
+                    if lang == 'zh2':
+                        txt_n = txt.replace(u'\u3000', u' ')
+                    if txt_n != str(txt):
+                        changes['"{0}" => "{1}"'.format(txt, txt_n)] += 1
                         if txt.is_text:
-                            parent.text = text_n
+                            parent.text = txt_n
                         elif txt.is_tail:
-                            parent.tail = text_n
+                            parent.tail = txt_n
                         else:
                             raise Exception("")
-            '''
+            if lang == 'zh2':
+                for w in se.iter("w"):
+                    if not w.tail and w.getnext() is not None and w.getnext().tag == 'w':
+                        w.tail = ' '
+        return tree
+
+    '''
             if lang == 'zh':
                 texts = se.xpath(".//text()")
                 for txt in texts:
@@ -192,8 +200,15 @@ class FeatsChecker(ProcessorBasic):
                         self.punct[txt] += 1
 
         return tree
+        '''
+    def put_counter(self, name, counter):
+        with open(Path('~/Documents/'+name).expanduser(), 'w') as fout:
+            for data in counter.most_common():
+                fout.write("{0} - {1}\n".format(data[0], data[1]))
 
     def put_info(self):
+        self.put_counter('changes_zh.txt', self.changes_zh)
+        self.put_counter('changes_zh1.txt', self.changes_zh1)
         '''
         if self.feats_loader.wrong:
             if '' in self.feats_loader.wrong:
@@ -206,10 +221,6 @@ class FeatsChecker(ProcessorBasic):
             fout.write("china feat sets:\n\n")
             fout.write('\n'.join(sorted(self.feat_grs))+'\n')
         '''
-        with open(Path('~/Documents/china_punct.txt').expanduser(), 'w') as fout:
-            fout.write("china punct:\n\n")
-            for nn in self.punct.most_common(100):
-                fout.write('"{0}" - {1}\n'.format(nn[0], nn[1]))
 
 
 if __name__ == '__main__':
@@ -217,7 +228,7 @@ if __name__ == '__main__':
     parser_args = parser.parse_args()
     feats_checker = FeatsChecker(parser_args)
     feats_checker.process()
-    feats_checker.put_info()
+    # feats_checker.put_info()
 
 
 
