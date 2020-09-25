@@ -26,10 +26,11 @@ class ErrorProcessor(object):
         self.limit = kwargs.get('limit', -1)
         self.inppath = expanduser(kwargs['inppath'])
         self.show_file = None
+        self.limit_doc = kwargs.get('limit_doc', -1)
 
-        self.err_report_name = expanduser(kwargs.get('err_report', None)) # имя файла для ошибок
+        self.err_report_name = expanduser(kwargs.get('err_report', None))  # имя файла для ошибок
         self.mess_counter = Counter() if self.stat_name is not None else None
-        self.wrong_docs = set()
+        self.wrong_docs = Counter()
         self.err_num = 0
         self.err_report = None
         self.step = ''
@@ -39,7 +40,8 @@ class ErrorProcessor(object):
             return
         self.mess_counter[mess] = self.mess_counter[mess] + num
 
-    def fatal_error(self, mess):
+    @staticmethod
+    def fatal_error(mess):
         sys.stderr.write(mess + '\nprogram terminated\n')
         raise ProgramTerminated()
 
@@ -71,7 +73,7 @@ class ErrorProcessor(object):
                     err_report_name += str(self.step) + ext
                 self.try_create_folder(err_report_name)
                 self.err_report = open(err_report_name, 'w')
-        except (OSError, IOError) as e:
+        except (OSError, IOError):
             self.fatal_error("Can't open message file " + self.err_report_name)
 
     def load_mess_data(self, filename):
@@ -79,7 +81,7 @@ class ErrorProcessor(object):
             if filename is not None:
                 with open(filename, 'r') as f:
                     return f.read().splitlines()
-        except (OSError, IOError) as e:
+        except (OSError, IOError):
             self.fatal_error("Can't load list of ignored messages " + filename)
 
     def load_ignore_mess(self):
@@ -93,30 +95,25 @@ class ErrorProcessor(object):
     def print_message(self, mess):
         if self.err_report is None:  # если файл для вывода сообщения не проинициализирован
             self.open_log()
-        # if isinstance(mess, unicode):
-            # mess = mess.encode(encoding='utf-8')
         self.err_report.write(mess+'\n')
         self.err_num += 1
         if self.limit != -1 and self.limit <= self.err_num:
             self.fatal_error('Message number exceed '+str(self.limit))
 
     def check_ignore(self, mess):
-        # if isinstance(mess, unicode):
-            # mess = mess.encode('utf-8')
         if self.show_mess is not None:
             return mess not in self.show_mess
         return self.ignore_mess is not None and mess in self.ignore_mess
 
     def err_file_report(self, f_name):
-        if self.show_files_name is None:
-            return
-        if f_name in self.wrong_docs:
-            return
-        self.wrong_docs.add(f_name)
-        if self.show_file is None:
-            self.show_file = open(self.show_files_name, "w")
-        self.show_file.write(f_name + '\n')
-
+        if self.show_files_name is None and self.limit_doc == -1:
+            return True
+        err_num_doc := self.wrong_docs[f_name] += 1
+        if self.limit_doc != -1 and self.limit_doc <= err_num_doc:
+            if self.limit_doc == err_num_doc:
+                self.err_report.write('File {0}: more then {1} errors'.format(f_name, err_num_doc))
+            return False
+        return True
 
     def proc_message(self, mess, f_name=None, line=-1, example=''):
         if self.check_ignore(mess):
@@ -124,42 +121,41 @@ class ErrorProcessor(object):
         self.count_mess(mess)
         full_mess = ''
         if f_name is not None:
-            # self.wrong_docs.add(f_name)
-            self.err_file_report(f_name)
             if self.inppath is not None:
                 f_name = os.path.join(self.inppath, f_name)
+            if not self.err_file_report(f_name):
+                return
             full_mess = 'File "' + f_name + '"'
         if line != -1:
             if full_mess:
                 full_mess += ', '
             full_mess += 'line '+str(line)
         if full_mess:
-            full_mess +='\n'
+            full_mess += '\n'
         full_mess += mess
         if example != '':
             full_mess += '('+example+')'
         self.print_message(full_mess)
 
+    def report_counter(self, fname, counter, vname):
+        if not counter:
+            return
+        if fname is None:
+            return
+        self.try_create_folder(fname)
+        try:
+            with open(self.fname, 'w') as f_count:
+                for data in counter.most_common():
+                    f_count.write('{0}:{1} {2}\n'.format(data[0], data[1], vname))
+        except Exception:
+            self.fatal_error("can't write {0}\n".format(fname))
+
     def report(self):
         if self.wrong_docs:
-            mess = "errors found in {0} documents.\n".format(len(self.wrong_docs))
+            mess = "errors found in {0} documents.\n".format(sum(self.wrong_docs.values()))
             sys.stdout.write(mess)
             if self.err_report is not sys.stdout:
                 self.err_report.write(mess)
                 sys.stdout.write('See ' + self.err_report_name+'\n')
-                '''if self.show_files_name is not None:
-                    with open(self.show_files_name,"w") as show_files:
-                        for name in sorted(self.wrong_docs):
-                            show_files.write(name + '\n')
-                '''
-        if self.mess_counter:
-            self.try_create_folder(self.stat_name)
-            try:
-                with open(self.stat_name, 'w') as f_count:
-                    for err in self.mess_counter.most_common():
-                        err_txt = err[0]
-                        # if isinstance(err_txt, unicode):
-                            # err_txt = err_txt.encode(encoding='utf-8')
-                        f_count.write(err_txt + ': ' + str(err[1]) + ' time(s)\n')
-            except Exception as e:
-                self.fatal_error("can't write statistics into " + self.stat_name)
+            self.report_counter(self.show_files_name, self.wrong_docs, 'error(s)')
+        self.report_counter(self.stat_name, self.mess_counter, 'time(s)')

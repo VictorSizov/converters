@@ -120,15 +120,13 @@ class ValidatorBasic(ProcessorBasic):
     def process_lxml_tree(self, tree):
         """проверка соответствия xml-дерева схеме,
         вывод ошибок в случае несоответствия"""
+        super().process_lxml_tree(tree)
         if self.schema:
             if self.schema.validate(tree):
                 return tree
-
             for error in self.schema.error_log:
                 self.line = error.line
                 self.err_proc(error.message.encode("utf-8"))
-        else:
-            super().process_lxml_tree(tree)
         return None
 
     def process_file(self, inpfile):
@@ -234,7 +232,6 @@ def add_arguments(title):
     parser.add_argument('--ignore_mess', default=None)
     parser.add_argument('--show_mess', default=None)
     parser.add_argument('--show_files', default=None)
-    parser.add_argument('--limit', type=int, default=-1)
     return parser
 
 if __name__ == '__main__':

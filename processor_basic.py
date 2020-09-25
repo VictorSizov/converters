@@ -11,6 +11,7 @@ import re
 import time
 import argparse
 from error_processor import ErrorProcessor, ProgramTerminated, expanduser
+from collections import Counter
 
 
 class ProcessorBasic(object):
@@ -30,6 +31,8 @@ class ProcessorBasic(object):
         self.outpath = expanduser(args.outpath)
         self.outcode = 'utf-8'
         self.rewrite = args.rewrite
+        self.tag_counter_name = expanduser(args.tag_counter) if hasattr(args, 'tag_counter') else None
+        self.tag_counter = Counter() if self.tag_counter_name else None
 
     def count_mess(self, mess, num=1):
         self.error_processor.count_mess(mess, num)
@@ -80,6 +83,7 @@ class ProcessorBasic(object):
         try:
             tree = etree.parse(inpname)
             self.inpname = inpname
+            self.error_processor.err_num_doc = 0
             tree = self.process_lxml_tree(tree)
             self.inpname = ""
             if not self.outpath:
@@ -177,6 +181,12 @@ class ProcessorBasic(object):
         print('processing time', d2 - d1, 'sec')
         self.error_processor.report()
 
+    def print_tag_stat(self):
+        if self.tag_counter_name:
+            with open(self.tag_counter_name, "w", encoding="utf8") as f:
+                for stat in self.tag_counter.most_common():
+                    f.write("tag:{0} - {1} times\n".format(stat[0], stat[1]))
+
 def fill_arg_for_processor(description, action_description=None, default_rewrite=False):
     """Вспомогательная функция для описания параметров программы """
     parser = argparse.ArgumentParser(description=description)
@@ -186,7 +196,12 @@ def fill_arg_for_processor(description, action_description=None, default_rewrite
     parser.add_argument('--err_report', default=None)
     parser.add_argument('--stat', default=None)
     parser.add_argument('--outpath', default=None)
+    parser.add_argument('--tag_counter', default=None)
     parser.add_argument('--rewrite', default=default_rewrite, action='store_true')
+    parser.add_argument('--limit', type=int, default=-1)
+    parser.add_argument('--limit_doc', type=int, default=-1)
+
+
     if action_description is None:
         action_description = {'default': None}
     parser.add_argument('--action', **action_description)
@@ -199,6 +214,8 @@ class Normalizer(ProcessorBasic):
             tmp = sorted(elem.items())
             elem.attrib.clear()
             elem.attrib.update(tmp)
+            if self.tag_counter_name:
+                self.tag_counter[elem.tag] +=1
         return tree
 
 
@@ -207,3 +224,4 @@ if __name__ == '__main__':
     parser_args = parser.parse_args()
     normalizer = Normalizer(parser_args)
     normalizer.process()
+    normalizer.print_tag_stat()

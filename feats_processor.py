@@ -51,8 +51,11 @@ class FeatsChecker(ProcessorBasic):
         self.changes_zh=Counter()
         self.changes_zh1=Counter()
         self.whites = {u' ', u'\u3000'}
-        self.langs = set()
-
+        self.transl = Counter()
+        self.trans = str.maketrans('\u00a0,—()»«–:”?"~!%/“„ ;§', "                     ")
+        self.counter = Counter()
+        self.transl_info = dict()
+        self.transl_tab = str.maketrans({",": "，", ".": "。", ":": "：", "?": "？", "!": "！", " ": "", "　": ""})
     '''
     Проверка допустимых морф. признаков
     def process_lxml_tree(self, tree):
@@ -161,6 +164,12 @@ class FeatsChecker(ProcessorBasic):
                 self.err_proc("Wrong language " + lang)
         return tree
     '''
+    def del_double(self, txt, sym):
+        double = sym+sym
+        while(txt.find(double) != -1):
+            txt = txt.replace(double, sym)
+        return txt
+    """
     def process_lxml_tree(self, tree):
         root = tree.getroot()
         for se in root.iter('se'):
@@ -171,13 +180,19 @@ class FeatsChecker(ProcessorBasic):
                 texts = se.xpath(".//text()")
                 for txt in texts:
                     parent = txt.getparent()
-                    txt_n = ''
+                    txt_n = txt
+                    '''   1
+                    txt_n = self.del_double(txt_n, '\n')
+                    '''
+                    '''   2
                     if lang == 'zh':
-                        txt_n = txt.replace(' ', u'\u3000')
+                        txt_n = txt_n.replace(' ', u'\u3000')
                         if txt_n == '\n':
                             txt_n = ''
+                    '''
                     if lang == 'zh2':
-                        txt_n = txt.replace(u'\u3000', u' ')
+                        txt_n = txt_n.replace(u'\u3000', u' ')
+
                     if txt_n != str(txt):
                         changes['"{0}" => "{1}"'.format(txt, txt_n)] += 1
                         if txt.is_text:
@@ -191,7 +206,7 @@ class FeatsChecker(ProcessorBasic):
                     if not w.tail and w.getnext() is not None and w.getnext().tag == 'w':
                         w.tail = ' '
         return tree
-
+    """
     '''
             if lang == 'zh':
                 texts = se.xpath(".//text()")
@@ -201,14 +216,72 @@ class FeatsChecker(ProcessorBasic):
 
         return tree
         '''
+    def change_txt(self, txt, elem):
+        txt_n = txt.translate(self.transl_tab)
+        if elem.tag == 'se':
+            if txt.is_tail:
+                return txt_n
+        return txt_n.replace('\n', '')
+
+    def change_texts(self, elem):
+        texts = elem.xpath(".//text()")
+        for txt in texts:
+            parent = txt.getparent()
+            txt_n = self.change_txt(txt, parent)
+            if txt != txt_n:
+                if txt.is_text:
+                    parent.text = txt_n
+                elif txt.is_tail:
+                    parent.tail = txt_n
+                else:
+                    raise Exception("")
+
+    def process_lxml_tree(self, tree):
+        root = tree.getroot()
+        for se in root.iter('se'):
+            self.set_line_info(se)
+            lang = se.get('lang', '?')
+            if lang == 'zh':
+                self.change_texts(se)
+                if not se.tail:
+                    se.tail = '\n'
+        return tree
+
     def put_counter(self, name, counter):
-        with open(Path('~/Documents/'+name).expanduser(), 'w') as fout:
+        with open(Path('~/Documents/'+name).expanduser(), 'w', encoding='utf-8') as fout:
             for data in counter.most_common():
                 fout.write("{0} - {1}\n".format(data[0], data[1]))
 
+    ''' Анализ поля transl 
+    def process_lxml_tree(self, tree):
+        root = tree.getroot()
+        for ana in root.iter('ana'):
+            transl = ana.get("transl","")
+            if not transl:
+                continue
+            for sym in transl:
+                self.counter[sym] += 1
+            transl = transl.replace(', ','\t')
+            transl_list = transl.split('\t')
+            for tr in transl_list:
+                tr_n = tr.translate(self.trans)
+                tr_list = [t for t in tr_n.split() if t]
+                len_tr = len(tr_list)
+                if len_tr > 10:
+                    n_trans = self.transl_info.setdefault(len_tr, {tr: [self.inpname, ana.sourceline, 0]});
+                    n_trans.setdefault(tr, [self.inpname, ana.sourceline, 0])[2] += 1
+                self.transl[len_tr] += 1
+        '''
+
     def put_info(self):
-        self.put_counter('changes_zh.txt', self.changes_zh)
-        self.put_counter('changes_zh1.txt', self.changes_zh1)
+        self.put_counter('transl.txt',self.transl)
+        with open(Path('~/Documents/transl_info.txt').expanduser(), 'w', encoding='utf-8') as fout:
+            for key,values in sorted(self.transl_info.items()):
+                fout.write("{0}:\n".format(key));
+                for val_k,val_v in values.items():
+                    fout.write('"{0}" - {1} \n'.format(val_k,val_v[2]))
+        # self.put_counter('changes_zh.txt', self.changes_zh)
+        # self.put_counter('changes_zh1.txt', self.changes_zh1)
         '''
         if self.feats_loader.wrong:
             if '' in self.feats_loader.wrong:
@@ -228,7 +301,7 @@ if __name__ == '__main__':
     parser_args = parser.parse_args()
     feats_checker = FeatsChecker(parser_args)
     feats_checker.process()
-    # feats_checker.put_info()
+    feats_checker.put_info()
 
 
 
