@@ -108,7 +108,8 @@ class ErrorProcessor(object):
     def err_file_report(self, f_name):
         if self.show_files_name is None and self.limit_doc == -1:
             return True
-        err_num_doc := self.wrong_docs[f_name] += 1
+        self.wrong_docs[f_name] += 1
+        err_num_doc = self.wrong_docs[f_name]
         if self.limit_doc != -1 and self.limit_doc <= err_num_doc:
             if self.limit_doc == err_num_doc:
                 self.err_report.write('File {0}: more then {1} errors'.format(f_name, err_num_doc))
@@ -144,7 +145,7 @@ class ErrorProcessor(object):
             return
         self.try_create_folder(fname)
         try:
-            with open(self.fname, 'w') as f_count:
+            with open(fname, 'w') as f_count:
                 for data in counter.most_common():
                     f_count.write('{0}:{1} {2}\n'.format(data[0], data[1], vname))
         except Exception:

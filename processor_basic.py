@@ -98,7 +98,7 @@ class ProcessorBasic(object):
             return True
         except (OSError, IOError) as e:
             self.error_processor.proc_message("file open/reading error '{0}'".format(inpname))
-            self.error_processor.wrong_docs.add(inpname)
+            self.error_processor.wrong_docs[inpname] += 1
         except etree.LxmlError as e:
             self.lxml_err_proc(e)
         return False
@@ -148,7 +148,6 @@ class ProcessorBasic(object):
         try:
             d1 = time.perf_counter()
             self.error_processor.load_ignore_mess()
-            self.error_processor.wrong_docs = set()
             for self.inppath in self.inppaths.split(';'):
                 inppath = self.inppath
                 if not os.path.exists(inppath):
