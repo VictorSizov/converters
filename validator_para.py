@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
+import sys
 from validator_basic import ValidatorBasic, add_arguments
 
 
-class CheckPara(ValidatorBasic):
+class ValidatorPara(ValidatorBasic):
 
     def __init__(self, args):
         super().__init__(args)
@@ -44,6 +44,8 @@ class CheckPara(ValidatorBasic):
         return correct
 
     def process_lxml_tree(self, tree):
+        if not super(ValidatorPara, self).process_lxml_tree(tree):
+            return None
         root = tree.getroot()
         base = root.base
         lang_path = base[base.find("/para/texts/")+len("/para/texts/"):].split('/')[0]
@@ -63,16 +65,17 @@ class CheckPara(ValidatorBasic):
             if langs is None:
                 correct = self.check_first(langs_int, lang_path)
                 if not correct:
-                    self.err_proc("{0} Ошибка последовательности языков/вариантов".format(langs_curr))
+                    self.err_proc("Ошибка последовательности языков/вариантов",langs_curr)
                 else:
                     langs = langs_curr
             elif langs != langs_curr:
-                self.err_proc("{0} Ошибка последовательности языков/вариантов".format(langs_curr))
+                self.err_proc("Ошибка последовательности языков/вариантов",langs_curr)
         return None
 
 
 if __name__ == '__main__':
     parser = add_arguments('para validator')
     parser_args = parser.parse_args()
-    check_para = CheckPara(parser_args)
-    check_para.process()
+    validator = ValidatorPara(parser_args)
+    if not validator.process() or validator.error_processor.err_num > 0:
+        sys.exit(1)

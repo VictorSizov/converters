@@ -21,7 +21,7 @@ class ErrorProcessor(object):
         self.ignore_mess = None
         self.show_mess_name = expanduser(kwargs.get('show_mess', None))
         self.show_mess = None
-        self.show_files_name = kwargs.get('show_files', None)
+        self.show_files_name = expanduser(kwargs.get('show_files', None))
         self.stat_name = expanduser(kwargs.get('stat', None))
         self.limit = kwargs.get('limit', -1)
         self.inppath = expanduser(kwargs['inppath'])

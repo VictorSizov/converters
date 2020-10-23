@@ -37,7 +37,7 @@ class ValidatorBasic(ProcessorBasic):
         self.table_name = os.path.join(root, "tables", name+".csv")
         self.corp_root = os.path.dirname(root)
         """инициализация имени схемы"""
-        schema_name = os.path.join(root, "table", name+".xsd")
+        schema_name = args.scheme
         self.schema_name = schema_name if os.path.exists(schema_name) else None
         self.valid_path_symbols = set(string.ascii_letters+string.digits+u"-+=_/\\.")
 
@@ -126,7 +126,7 @@ class ValidatorBasic(ProcessorBasic):
                 return tree
             for error in self.schema.error_log:
                 self.line = error.line
-                self.err_proc(error.message.encode("utf-8"))
+                self.err_proc(error.message)
         return None
 
     def process_file(self, inpfile):
@@ -232,6 +232,7 @@ def add_arguments(title):
     parser.add_argument('--ignore_mess', default=None)
     parser.add_argument('--show_mess', default=None)
     parser.add_argument('--show_files', default=None)
+    parser.add_argument('--scheme', default=None)
     return parser
 
 if __name__ == '__main__':
