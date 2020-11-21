@@ -94,7 +94,9 @@ class ProcessorBasic(object):
             outdir = os.path.dirname(outfile)
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
-            tree.write(outfile, encoding='utf-8', xml_declaration=True)
+            with open(outfile, 'wb') as fout:
+                fout.write('<?xml version="1.0" encoding="{0}"?>\n'.format(self.outcode).encode("utf-8"))
+                tree.write(fout, encoding=self.outcode, xml_declaration=False)
             return True
         except (OSError, IOError) as e:
             self.error_processor.proc_message("file open/reading error '{0}'".format(inpname))
