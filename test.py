@@ -6,6 +6,7 @@ from collections import Counter
 import os
 import copy
 import pathlib
+import csv
 
 from lxml_ext import LxmlExt
 """ Вспомогательные программы      """
@@ -266,16 +267,40 @@ def check_doubles(doubles_raw, duration_info, doubles):
             f_out.write(cmp_duration(st_split, 3)+'\n')
 
 
-if __name__ == '__main__':
-    # err_proc('duration_info_raw.txt', 'duration_info.txt')
-    # err_proc('duration_info_yandex_raw.txt', 'duration_info_yandex.txt')
-    # join('duration_info.txt', 'duration_info_yandex.txt', 'duration_info_tmp_res.txt')
-    # time_proc('duration_info_tmp_res.txt', 'duration_info_res.txt')
-    # doubles('video_ids_raw.csv', 'video_ids.csv', 'doubles_raw.txt')
-    # classify('video_ids.csv','duration_info_res.txt', 'not_found.txt', 'problems.txt','not_used.txt')
-    # check_doubles('doubles_raw.txt', 'duration_info_yandex.txt', 'doubles.txt' )
-    del_doubles2('video_ids.csv','video_ids_n.csv')
+def conv_murco(inp_name, out_name):
+    my_path = '/place/ruscorpora/corpora/murco/tables/'
+    with open(my_path+inp_name) as f_in, open(my_path+out_name, "w") as f_out:
+        for n, st in enumerate(f_in):
+            st_split = st.split(';')
+            if len(st_split) !=2:
+                raise Exception('Logic error')
+            if n != 0:
+                st_split[0] = remove_extra(st_split[0])+'.xml'
+            f_out.write('{0};{1}'.format(st_split[0], st_split[1]))
 
+
+def join2(inp_name1,inp_name2,out_name):
+    with open(path + inp_name1) as f_in1, open(path + inp_name2) as f_in2, open(path + out_name, "w") as f_out:
+        set1 = {st.rstrip() for st in f_in1}
+        for st in f_in2:
+            st_split = st.split()
+            if st_split[1] in set1:
+                f_out.write("{0}\n".format(st_split[0]))
+
+
+if __name__ == '__main__':
+    """  Сбор сведений о клипах  
+    err_proc('duration_info_raw.txt', 'duration_info.txt')
+    err_proc('duration_info_yandex_raw.txt', 'duration_info_yandex.txt')
+    join('duration_info.txt', 'duration_info_yandex.txt', 'duration_info_tmp_res.txt')
+    time_proc('duration_info_tmp_res.txt', 'duration_info_res.txt')
+    doubles('video_ids_raw.csv', 'video_ids.csv', 'doubles_raw.txt')
+    classify('video_ids.csv','duration_info_res.txt', 'not_found.txt', 'problems.txt','not_used.txt')
+    check_doubles('doubles_raw.txt', 'duration_info_yandex.txt', 'doubles.txt' )
+    del_doubles2('video_ids.csv','video_ids_n.csv')
+    """
+    conv_murco('video_ids.csv','video_ids_n.csv')
+    # join2('lost.txt','video_ids.csv','lost_names.txt')
 
 
 
