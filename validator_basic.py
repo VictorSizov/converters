@@ -47,10 +47,6 @@ class ValidatorBasic(ProcessorBasic):
         self.media = args.media
         self.schema = None
         """ Костыль для удаления необработанных файлов"""
-        self.del_path = None
-        if os.path.basename(self.table_name)=="murco.csv":
-            with open(os.path.join(os.path.dirname(self.table_name),"new.txt")) as del_f:
-                self.del_path = {s.rstrip('\n') for s in del_f}
 
     def check_date(self, key, value, value_src, prefix):
         ret = u'{0} {1}="{2}": '.format(prefix, key, value_src)
@@ -229,13 +225,11 @@ class ValidatorBasic(ProcessorBasic):
             paths_set_groups.add('/'.join(p_split[:-1]))
         return paths_set_groups
 
-
     def check_media(self, paths_set) -> List[str]:
         video_table_name = os.path.join(os.path.dirname(self.table_name), "video_ids.csv")
         video_root_name = os.path.join(self.corp_root,"tables", "video")
         video_table = ProcessorVideoTable(video_table_name, video_root_name, self.error_processor)
-        video_names = self.cut_elements(video_table.process(), '.',
-                                        ('avi',  'AVI', 'db', 'mp3', 'mp4', 'wav', 'wma', 'wmv', 'WMV'))
+        video_names = {os.path.splitext(p)[0] for p in video_table.process()}
         group_paths_set = self.check_media_path(paths_set)
         # group_video_names = set(self.cut_elements(video_names, '_'))
         # mess_missed = "Clip group {{0}}_*, mentioned in {0} not found in {1}".format("murco.csv", "video_ids.csv")
@@ -244,7 +238,7 @@ class ValidatorBasic(ProcessorBasic):
         # common_group = group_paths_set.intersection(group_video_names)
         # paths_set_cpy = {ss for ss in paths_set if ss.split('_')[:-1] in common_group}
         # video_names = {ss for ss in video_names if ss.split('_')[:-1] in common_group}
-        paths_set_cpy = {ss.split('/')[-1]: ss for ss in paths_set if ss.split('/')[-3] not in self.del_path}
+        paths_set_cpy = {ss.split('/')[-1]: ss for ss in paths_set}
         # paths_set_cpy = {ss for ss in paths_set if ss.split('/')[-3] not in self.del_path}
         mess_missed = "Tagged file for clip {0} from video_ids.csv is not found"
         mess_extra = "Clip for file {0} is not found in video_ids.csv"
