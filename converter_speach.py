@@ -121,7 +121,7 @@ class ConverterSpeach(ConverterWithSteps):
             to_lower = False
             tmp = dict()
             # tmp = {key.lower(): value for key, value in speech.attrib.iteritems()}
-            for key, value in speech.attrib.iteritems():
+            for key, value in speech.attrib.items():
                 lower_key = key.lower()
                 if lower_key != key:
                     self.count_mess('<speech>: to_lower ' + key)
@@ -612,7 +612,7 @@ class ConverterSpeach(ConverterWithSteps):
 
     def swap_report(self, prop_dict, before_filters):
         continue_work = False
-        for key, value in prop_dict.iteritems():
+        for key, value in prop_dict.items():
             attr_type = value[0]
             attr_value = value[1]
             swap_dict = value[2]

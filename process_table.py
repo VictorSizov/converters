@@ -83,3 +83,54 @@ class ProcessorVideoTable(ProcessorTable):
             self.clip_set.add(row['video_id'])
 
 
+
+class ProcessorActsTable(ProcessorTable):
+    def __init__(self, table_name: str, descr_dict, error_processor: ErrorProcessor = None):
+        super().__init__(table_name, error_processor)
+        self.descr_dict = descr_dict
+
+    def process_row(self, row):
+        super().process_row(row)
+        for key, value in row.items():
+            res = self.descr_dict.get(key, None)
+            if res is not None:
+                if value and value not in res:
+                    self.proc_message('{0} - unknown value of {2}'.format(value, key))
+
+    def process_data(self):
+        for field in self.reader.fieldnames:
+            field = field.lower()
+            if field != 'имя файла' and field not in self.descr_dict:
+                self.proc_message('{0} - unknown name of column'.format(field))
+        return super().process_data()
+
+def LoadCheckData(descr_name: str):
+    descr_dict = dict()
+    name = ""
+    values = set()
+    with open(descr_name) as f_descr:
+        for descr in f_descr:
+            descr = descr.rstrip()
+            descr_sp = descr.split(':')
+            if len(descr_sp) == 2:
+                if name:
+                    if values:
+                        descr_dict[name] = values
+                    else:
+                        raise Exception("Error in check data")
+                name = descr_sp[0].lower()
+                if name in descr_dict:
+                    raise Exception("Error in check data")
+                values = set()
+            elif len(descr_sp) == 1:
+                if descr in values:
+                    raise Exception("Error in check data")
+                values.add(descr)
+            else:
+                raise Exception("Error in check data")
+        if name:
+            if values:
+                descr_dict[name] = values
+            else:
+                raise Exception("Error in check data")
+    return descr_dict

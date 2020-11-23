@@ -10,7 +10,7 @@ from lxml import etree
 import csv
 import os
 import sys
-from process_table import ProcessorTable, ProcessorVideoTable
+from process_table import ProcessorTable, ProcessorVideoTable, ProcessorActsTable, LoadCheckData
 
 from typing import List
 
@@ -245,6 +245,19 @@ class ValidatorBasic(ProcessorBasic):
         self.check_arrays(set(paths_set_cpy.keys()), set(video_names), mess_missed, mess_extra,paths_set_cpy)
         return group_paths_set
 
+    def check_acts(self, templ):
+        templ_check = os.path.join(os.path.dirname(self.inppaths),'meta','{0}','{0}_values.txt').format(templ)
+        dict_check = LoadCheckData(templ_check)
+        paths = []
+        for root, dirs, files in os.walk(self.inppaths, followlinks=True):
+            # root = os.path.relpath(root, self.inppaths)
+            paths += [os.path.join(root, d) for d in dirs if d == 'table_'+templ]
+        for p in paths:
+            fname = "{0}_{1}.csv".format(p.split('/')[-2], templ)
+            name = os.path.join(p, fname)
+            acts_table = ProcessorActsTable(name, dict_check, self.error_processor)
+            acts_table.process()
+
     def check_arrays(self, paths_set, cmp_paths_set, mess_missed, mess_extra, full_paths=None):
         if paths_set != cmp_paths_set:
             missed = sorted(cmp_paths_set.difference(paths_set))
@@ -272,7 +285,11 @@ class ValidatorBasic(ProcessorBasic):
 
         if self.media:
             paths_set = self.check_media(paths_set)
-
+            '''
+            if os.path.exists(os.path.join(os.path.dirname(self.inppaths),'meta')):
+                self.check_acts('gest')
+                self.check_acts('acts')
+            '''
         mess_missed = "File {{0}}, mentioned in {0} not found".format(self.table_name)
         mess_extra = "File {{0}} is not mentioned in {0}".format(self.table_name)
         self.check_arrays(cmp_paths_set, paths_set, mess_missed, mess_extra)
