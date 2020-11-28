@@ -287,6 +287,18 @@ def join2(inp_name1,inp_name2,out_name):
             if st_split[1] in set1:
                 f_out.write("{0}\n".format(st_split[0]))
 
+def correct_video(name):
+    p = Path(name).glob('*')
+    files = [x for x in p if x.is_file()]
+    for fn in files:
+        tree = etree.parse(str(fn))
+        for elem in tree.getroot().iter('meta'):
+            if elem.attrib.get('name', '') == 'video_id':
+                elem.attrib['content'] = fn.stem
+        with open(fn, 'wb') as fout:
+            fout.write('<?xml version="1.0" encoding="utf-8"?>\n'.encode("utf-8"))
+            tree.write(fout, encoding="utf-8", xml_declaration=False)
+
 
 if __name__ == '__main__':
     """  Сбор сведений о клипах  
@@ -299,9 +311,11 @@ if __name__ == '__main__':
     check_doubles('doubles_raw.txt', 'duration_info_yandex.txt', 'doubles.txt' )
     del_doubles2('video_ids.csv','video_ids_n.csv')
     """
-    conv_murco('video_ids.csv','video_ids_n.csv')
+    # conv_murco('video_ids.csv','video_ids_n.csv')
     # join2('lost.txt','video_ids.csv','lost_names.txt')
-
+    # correct_video('/place/ruscorpora/texts/finalized/murco/public/politics/evstifeev/texts')
+    # correct_video('/place/ruscorpora/texts/finalized/murco/public/politics/voronezh_debaty_2016/texts')
+    correct_video('/place/ruscorpora/test_5/texts/finalized/murco/public/science/politru/plungian_korpus_linguistika/texts')
 
 
 
