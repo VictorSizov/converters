@@ -9,8 +9,8 @@ def make_elem(paths, n, is_src):
         n = str(n)
     if n.isdigit():
         n = n.rjust(3, '0')
-    pref = '_tmp/' if is_src else '/'
-    return "{0}{1}{2}{3}{4}".format(paths[0], pref, paths[1], n, paths[2])
+    pref = '~' if is_src else ''
+    return "{0}{1}/{2}{3}{4}".format(pref, paths[0], paths[1], n, paths[2])
 
 
 def make_pair(paths, s):
@@ -26,14 +26,13 @@ def dump(paths, corr_list, f_out):
             c_l = make_pair(paths, c_l)
             f_out.write("\cp {0} {1}\n".format(c_l[0], c_l[1]))
         if paths[0].find('finalized/') == -1:
-            f_out.write("rm -rf {0}_tmp\n".format(paths[0]))
-            f_out.write("git add {0}\n".format(paths[0]))
-            f_out.write("git commit\n")
+            f_out.write("cd {0}\n".format(paths[0]))
+            f_out.write("git add .\ngit commit\n")
 
 
 def put_head(paths, f_out):
-    f_out.write("mkdir -p {0}_tmp\n".format(paths[0]))
-    f_out.write("cp -r {0}/* {1}_tmp\n".format(paths[0], paths[0]))
+    f_out.write("mkdir -p ~{0}\n".format(paths[0]))
+    f_out.write("cp -r {0}/* ~{1}\n".format(paths[0], paths[0]))
 
 
 
