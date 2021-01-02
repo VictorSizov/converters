@@ -3,24 +3,16 @@ set -ex
 
 NUM=$1
 if [[ -z $NUM ]]; then
-   NUM=100
+   NUM=20
 fi
-python3 ./extractor.py spoken $NUM
-python3 ./extractor.py spoken/manual $NUM
-python3 ./extractor.py accent/accent_main $NUM
-python3 ./extractor.py accent/accent_stihi $NUM
-python3 ./extractor.py dialect $NUM
-python3 ./extractor.py main/source $NUM
-python3 ./extractor.py main/standard $NUM
-python3 ./extractor.py murco $NUM
-python3 ./extractor.py paper $NUM
-python3 ./extractor.py para $NUM
-python3 ./extractor.py poetic $NUM
-python3 ./extractor.py school $NUM
-python3 ./extractor.py slav/birchbark $NUM
-python3 ./extractor.py slav/mid_rus $NUM
-python3 ./extractor.py slav/old_rus $NUM
-python3 ./extractor.py slav/orthlib $NUM
-python3 ./extractor.py syntax $NUM
-python3 ./extractor.py multiparc/multiparc_rus $NUM
-python3 ./extractor.py multiparc/eng-rus $NUM
+
+corpuses1=("accent/accent_main"  "accent/accent_stihi"  "birchbark" "dialect" "main/standard" "main/source" "mid_rus"\
+  "multi" "multiparc/multiparc_rus" "multiparc/eng-rus"  "old_rus" "orthlib" "paper" "para" "poetic" \
+  "regional_grodno/regional_grodno_bel" "regional_grodno/regional_grodno_rus" "school" "spoken" "spoken/manual" )
+corpuses=( "spoken" "spoken/manual" )
+
+for s in "${corpuses[@]}"
+do
+  python3 ./extractor.py $s $NUM
+done
+python3 ./extractor.py murco "$NUM" --names_list add_murco.txt
