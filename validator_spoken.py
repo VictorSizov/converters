@@ -58,7 +58,8 @@ class ValidatorSpoken(ValidatorBasic):
                 self.err_proc('tag "{0}" is empty'.format(elem.tag))
 
     def process_lxml_tree(self, tree):
-        if not super(ValidatorSpoken, self).process_lxml_tree(tree):
+        tree = super(ValidatorSpoken, self).process_lxml_tree(tree)
+        if not tree:
             return None
         root = tree.getroot()
         self.check_attr_speech(root)

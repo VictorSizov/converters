@@ -32,7 +32,7 @@ class ConverterStihi(ProcessorBasic):
         root = tree.getroot()
         body = root.find('body')
         if body is None:
-            return
+            return None
         for elem in body.iter():
             if self.nostructured(elem):
                 continue

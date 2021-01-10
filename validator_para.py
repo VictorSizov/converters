@@ -44,7 +44,8 @@ class ValidatorPara(ValidatorBasic):
         return correct
 
     def process_lxml_tree(self, tree):
-        if not super(ValidatorPara, self).process_lxml_tree(tree):
+        tree = super(ValidatorPara, self).process_lxml_tree(tree)
+        if not tree:
             return None
         root = tree.getroot()
         base = root.base

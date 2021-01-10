@@ -127,7 +127,7 @@ class ValidatorBasic(ProcessorBasic):
     def process_lxml_tree(self, tree):
         """проверка соответствия xml-дерева схеме,
         вывод ошибок в случае несоответствия"""
-        super().process_lxml_tree(tree)
+        tree = super().process_lxml_tree(tree)
         if self.schema:
             if self.schema.validate(tree):
                 return tree

@@ -85,6 +85,8 @@ class ProcessorBasic(object):
             self.inpname = inpname
             self.error_processor.err_num_doc = 0
             tree = self.process_lxml_tree(tree)
+            if tree is None:
+                return True
             self.inpname = ""
             if not self.outpath:
                 if not self.rewrite:
@@ -128,6 +130,8 @@ class ProcessorBasic(object):
                     continue
                 if files:
                     root = os.path.relpath(root, inppath)
+                    if root == '.':
+                        root = ''
                     paths += [os.path.join(root, f) for f in files if os.path.splitext(f)[1] in self.valid_extensions]
         if self.filter:
             try:
@@ -188,7 +192,7 @@ class ProcessorBasic(object):
                 for stat in self.tag_counter.most_common():
                     f.write("tag:{0} - {1} times\n".format(stat[0], stat[1]))
 
-def fill_arg_for_processor(description, action_description=None, default_rewrite=False):
+def fill_arg_for_processor(description, default_rewrite=False):
     """Вспомогательная функция для описания параметров программы """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('inppath')
@@ -202,10 +206,6 @@ def fill_arg_for_processor(description, action_description=None, default_rewrite
     parser.add_argument('--limit', type=int, default=-1)
     parser.add_argument('--limit_doc', type=int, default=-1)
 
-
-    if action_description is None:
-        action_description = {'default': None}
-    parser.add_argument('--action', **action_description)
     return parser
 
 
