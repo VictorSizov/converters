@@ -17,7 +17,8 @@ class ValidatorStihi(ValidatorBasic):
         self.line = -1
 
     def process_lxml_tree(self, tree):
-        if not super(ValidatorStihi, self).process_lxml_tree(tree):
+        tree = super(ValidatorStihi, self).process_lxml_tree(tree)
+        if not tree:
             return None
         root = tree.getroot()
         for para in root.iter('p'):

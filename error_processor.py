@@ -21,15 +21,16 @@ class ErrorProcessor(object):
         self.ignore_mess = None
         self.show_mess_name = expanduser(kwargs.get('show_mess', None))
         self.show_mess = None
-        self.show_files_name = kwargs.get('show_files', None)
+        self.show_files_name = expanduser(kwargs.get('show_files', None))
         self.stat_name = expanduser(kwargs.get('stat', None))
         self.limit = kwargs.get('limit', -1)
         self.inppath = expanduser(kwargs['inppath'])
         self.show_file = None
+        self.limit_doc = kwargs.get('limit_doc', -1)
 
-        self.err_report_name = expanduser(kwargs.get('err_report', None)) # имя файла для ошибок
+        self.err_report_name = expanduser(kwargs.get('err_report', None))  # имя файла для ошибок
         self.mess_counter = Counter() if self.stat_name is not None else None
-        self.wrong_docs = set()
+        self.wrong_docs = Counter()
         self.err_num = 0
         self.err_report = None
         self.step = ''
@@ -39,7 +40,8 @@ class ErrorProcessor(object):
             return
         self.mess_counter[mess] = self.mess_counter[mess] + num
 
-    def fatal_error(self, mess):
+    @staticmethod
+    def fatal_error(mess):
         sys.stderr.write(mess + '\nprogram terminated\n')
         raise ProgramTerminated()
 
@@ -105,15 +107,15 @@ class ErrorProcessor(object):
         return self.ignore_mess is not None and mess in self.ignore_mess
 
     def err_file_report(self, f_name):
-        if self.show_files_name is None:
-            return
-        if f_name in self.wrong_docs:
-            return
-        self.wrong_docs.add(f_name)
-        if self.show_file is None:
-            self.show_file = open(self.show_files_name, "w")
-        self.show_file.write(f_name + '\n')
-
+        if self.show_files_name is None and self.limit_doc == -1:
+            return True
+        self.wrong_docs[f_name] += 1
+        err_num_doc = self.wrong_docs[f_name]
+        if self.limit_doc != -1 and self.limit_doc <= err_num_doc:
+            if self.limit_doc == err_num_doc:
+                self.err_report.write('File {0}: more then {1} errors'.format(f_name, err_num_doc))
+            return False
+        return True
 
     def proc_message(self, mess, f_name=None, line=-1, example=''):
         if self.check_ignore(mess):
@@ -121,35 +123,41 @@ class ErrorProcessor(object):
         self.count_mess(mess)
         full_mess = ''
         if f_name is not None:
-            # self.wrong_docs.add(f_name)
-            self.err_file_report(f_name)
             if self.inppath is not None:
                 f_name = os.path.join(self.inppath, f_name)
+            if not self.err_file_report(f_name):
+                return
             full_mess = 'File "' + f_name + '"'
         if line != -1:
             if full_mess:
                 full_mess += ', '
             full_mess += 'line '+str(line)
         if full_mess:
-            full_mess +='\n'
+            full_mess += '\n'
         full_mess += mess
         if example != '':
             full_mess += '('+example+')'
         self.print_message(full_mess)
 
+    def report_counter(self, fname, counter, vname):
+        if not counter:
+            return
+        if fname is None:
+            return
+        self.try_create_folder(fname)
+        try:
+            with open(fname, 'w') as f_count:
+                for data in counter.most_common():
+                    f_count.write('{0}:{1} {2}\n'.format(data[0], data[1], vname))
+        except Exception:
+            self.fatal_error("can't write {0}\n".format(fname))
+
     def report(self):
         if self.wrong_docs:
-            mess = "errors found in {0} documents.\n".format(len(self.wrong_docs))
+            mess = "errors found in {0} documents.\n".format(sum(self.wrong_docs.values()))
             sys.stdout.write(mess)
             if self.err_report is not sys.stdout:
                 self.err_report.write(mess)
                 sys.stdout.write('See ' + self.err_report_name+'\n')
-        if self.mess_counter:
-            self.try_create_folder(self.stat_name)
-            try:
-                with open(self.stat_name, 'w', encoding="utf-8") as f_count:
-                    for err in self.mess_counter.most_common():
-                        err_txt = err[0]
-                        f_count.write(err_txt + ': ' + str(err[1]) + ' time(s)\n')
-            except Exception as e:
-                self.fatal_error("can't write statistics into " + self.stat_name)
+            self.report_counter(self.show_files_name, self.wrong_docs, 'error(s)')
+        self.report_counter(self.stat_name, self.mess_counter, 'time(s)')

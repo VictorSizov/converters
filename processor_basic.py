@@ -11,6 +11,7 @@ import re
 import time
 import argparse
 from error_processor import ErrorProcessor, ProgramTerminated, expanduser
+from collections import Counter
 
 
 class ProcessorBasic(object):
@@ -18,7 +19,8 @@ class ProcessorBasic(object):
     def __init__(self, args):
         # инициализация параметров:
         self.error_processor = ErrorProcessor(args.__dict__)
-        self.inppath = expanduser(args.inppath)  # входные данные (папка или файл)
+        self.inppaths = expanduser(args.inppath)  # входные данные (папка или файл)
+        self.inppath = ''
         self.files = expanduser(args.files)  # имя файла со списком входных файлов
         self.filter = args.filter
         self.action = args.action if hasattr(args, 'action') else ''  # действие (зарезервировано)
@@ -27,6 +29,8 @@ class ProcessorBasic(object):
         self.outpath = expanduser(args.outpath)
         self.outcode = 'utf-8'
         self.rewrite = args.rewrite
+        self.tag_counter_name = expanduser(args.tag_counter) if hasattr(args, 'tag_counter') else None
+        self.tag_counter = Counter() if self.tag_counter_name else None
 
     def count_mess(self, mess, num=1):
         self.error_processor.count_mess(mess, num)
@@ -55,10 +59,18 @@ class ProcessorBasic(object):
     def nostructured(elem):
         return elem.tag is etree.PI or elem.tag is etree.Comment
 
+    def set_line_info(self, elem=None):
+        if elem is None or elem.tag is etree.PI or elem.tag is etree.Comment:
+            self.line = -1
+        else:
+            self.line = elem.sourceline
+
     def process_lxml_tree(self, tree):
-        """ обработка xml-дерева.
-        В дочерних классах  должна быть реализация """
-        raise Exception('you should rewrite this function in derived class')
+        for elem in tree.getroot().iter():
+            tmp = sorted(elem.items())
+            elem.attrib.clear()
+            elem.attrib.update(tmp)
+        return tree
 
     def process_file(self, inpfile):
         """ Получение дерева для xml-файла и вызов функции его обработки
@@ -69,7 +81,10 @@ class ProcessorBasic(object):
         try:
             tree = etree.parse(inpname)
             self.inpname = inpname
+            self.error_processor.err_num_doc = 0
             tree = self.process_lxml_tree(tree)
+            if tree is None:
+                return True
             self.inpname = ""
             if not self.outpath:
                 if not self.rewrite:
@@ -79,11 +94,13 @@ class ProcessorBasic(object):
             outdir = os.path.dirname(outfile)
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
-            tree.write(outfile, encoding='utf-8', xml_declaration=True)
+            with open(outfile, 'wb') as fout:
+                fout.write('<?xml version="1.0" encoding="{0}"?>\n'.format(self.outcode).encode("utf-8"))
+                tree.write(fout, encoding=self.outcode, xml_declaration=False)
             return True
         except (OSError, IOError) as e:
             self.error_processor.proc_message("file open/reading error '{0}'".format(inpname))
-            self.error_processor.wrong_docs.add(inpname)
+            self.error_processor.wrong_docs[inpname] += 1
         except etree.LxmlError as e:
             self.lxml_err_proc(e)
         return False
@@ -111,6 +128,8 @@ class ProcessorBasic(object):
                     continue
                 if files:
                     root = os.path.relpath(root, inppath)
+                    if root == '.':
+                        root = ''
                     paths += [os.path.join(root, f) for f in files if os.path.splitext(f)[1] in self.valid_extensions]
         if self.filter:
             try:
@@ -133,28 +152,28 @@ class ProcessorBasic(object):
         try:
             d1 = time.perf_counter()
             self.error_processor.load_ignore_mess()
-            self.error_processor.wrong_docs = set()
-            inppath = self.inppath
-            if not os.path.exists(inppath):
-                self.fatal_error("No file or directory "+inppath+" found")
-            check_path = inppath
-            if os.path.islink(inppath):
-                check_path = os.path.realpath(inppath)
-            if os.path.isfile(check_path):
-                if self.files is not None:
-                    self.fatal_error("if input is file name, --files is not valid")
-                self.process_file('')
-            elif os.path.isdir(check_path):
-                paths = self.get_paths(inppath)
-                nn = len(paths)
-                i = 0
-                for p in paths:
-                    i += 1
-                    if i % 25000 == 0:
-                        print("processed ", i, "total", nn)
-                    self.process_file(p)
-            else:
-                self.fatal_error("unknown input type")
+            for self.inppath in self.inppaths.split(';'):
+                inppath = self.inppath
+                if not os.path.exists(inppath):
+                    self.fatal_error("No file or directory "+inppath+" found")
+                check_path = inppath
+                if os.path.islink(inppath):
+                    check_path = os.path.realpath(inppath)
+                if os.path.isfile(check_path):
+                    if self.files is not None:
+                        self.fatal_error("if input is file name, --files is not valid")
+                    self.process_file('')
+                elif os.path.isdir(check_path):
+                    paths = self.get_paths(inppath)
+                    nn = len(paths)
+                    i = 0
+                    for p in paths:
+                        i += 1
+                        if i % 250 == 0:
+                            print("processed ", i, "total", nn)
+                        self.process_file(p)
+                else:
+                    self.fatal_error("unknown input type")
             self.error_report(d1)
             return True
         except ProgramTerminated:
@@ -165,7 +184,13 @@ class ProcessorBasic(object):
         print('processing time', d2 - d1, 'sec')
         self.error_processor.report()
 
-def fill_arg_for_processor(description, action_description=None, default_rewrite=False):
+    def print_tag_stat(self):
+        if self.tag_counter_name:
+            with open(self.tag_counter_name, "w", encoding="utf8") as f:
+                for stat in self.tag_counter.most_common():
+                    f.write("tag:{0} - {1} times\n".format(stat[0], stat[1]))
+
+def fill_arg_for_processor(description, default_rewrite=False):
     """Вспомогательная функция для описания параметров программы """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('inppath')
@@ -174,10 +199,11 @@ def fill_arg_for_processor(description, action_description=None, default_rewrite
     parser.add_argument('--err_report', default=None)
     parser.add_argument('--stat', default=None)
     parser.add_argument('--outpath', default=None)
+    parser.add_argument('--tag_counter', default=None)
     parser.add_argument('--rewrite', default=default_rewrite, action='store_true')
-    if action_description is None:
-        action_description = {'default': None}
-    parser.add_argument('--action', **action_description)
+    parser.add_argument('--limit', type=int, default=-1)
+    parser.add_argument('--limit_doc', type=int, default=-1)
+
     return parser
 
 
@@ -187,6 +213,8 @@ class Normalizer(ProcessorBasic):
             tmp = sorted(elem.items())
             elem.attrib.clear()
             elem.attrib.update(tmp)
+            if self.tag_counter_name:
+                self.tag_counter[elem.tag] +=1
         return tree
 
 
@@ -195,3 +223,4 @@ if __name__ == '__main__':
     parser_args = parser.parse_args()
     normalizer = Normalizer(parser_args)
     normalizer.process()
+    normalizer.print_tag_stat()

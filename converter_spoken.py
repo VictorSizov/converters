@@ -120,6 +120,7 @@ class ConverterSpeach(ConverterWithSteps):
         for speech in root.iter('speech'):
             to_lower = False
             tmp = dict()
+            # tmp = {key.lower(): value for key, value in speech.attrib.iteritems()}
             for key, value in speech.attrib.items():
                 lower_key = key.lower()
                 if lower_key != key:
