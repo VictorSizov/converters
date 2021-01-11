@@ -9,7 +9,7 @@ templext = '.templ'
 templprefix='validator_'
 nppexecini = 'NppExec.ini'
 nppexeccmd = 'npes_saved.txt'
-paths_names = ['CORPUS_PATH', 'INPUT_PATH', 'CSV_PATH', 'SCHEMA_PATH', 'IGNORE_PATH']
+paths_names = ['CORPUS_PATH', 'INPUT_PATH',  'SCHEMA_PATH', 'IGNORE_PATH']
 
 
 def ask():
@@ -69,7 +69,7 @@ def check_templ(templ_name, tmpl_data):
                     return ''
                 err += 'error: path {0} not exists (template: {1}, name: {2}\n'.format(check_path, templ_name, name)
         os.environ[name] = value
-    if paths_names_cpy:
+    if paths_names_cpy and paths_names_cpy != ['SCHEMA_PATH']:
         err += 'error: name(s) {0} are not defined (template: {1})\n'.format(','.join(paths_names_cpy), templ_name)
     if err:
         return err
@@ -108,7 +108,7 @@ def templ_process(basepath, currpath, templ_name):
 
 
 def init():
-    curd=os.getcwd()
+    curYd=os.getcwd()
     basepath = ask()
     if basepath == '':
         return

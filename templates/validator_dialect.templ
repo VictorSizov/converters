@@ -1,14 +1,13 @@
 rem -----------------------
-set CORPUS=spoken_manual
-set CORPUS_PATH=%BASE%/spoken/manual
+set CORPUS=dialect
+set CORPUS_PATH=%BASE%/%CORPUS%
 rem -----------------------
 set TABLES=%SCRIPT_PATH%/validation
-set SCRIPT=%SCRIPT_PATH%/validator_spoken.py
+set SCRIPT=%SCRIPT_PATH%/validator_basic.py
 set LOG=%SCRIPT_PATH%/log
 set INPUT_PATH=%CORPUS_PATH%
-set SCHEMA_PATH=%TABLES%/%CORPUS%.xsd
 set IGNORE_PATH=%TABLES%/ignore_mess.txt
 set STAT=%LOG%/%CORPUS%_stat.txt
 
 call %SCRIPT_PATH%/venv/Scripts/activate.bat
-python3 %SCRIPT% %INPUT_PATH% --scheme %SCHEMA_PATH% --table  %IGNORE_PATH% --stat %STAT%  --limit_doc 100
+python3 %SCRIPT% %INPUT_PATH%  --ignore_mess %IGNORE_PATH% --stat %STAT%  --limit_doc 100

@@ -5,11 +5,10 @@ rem -----------------------
 set TABLES=%SCRIPT_PATH%/validation
 set SCRIPT=%SCRIPT_PATH%/validator_spoken.py
 set LOG=%SCRIPT_PATH%/log
-set INPUT_PATH=%CORPUS_PATH%/texts
-set CSV_PATH=%CORPUS_PATH%/tables/%CORPUS%.csv
+set INPUT_PATH=%CORPUS_PATH%
 set SCHEMA_PATH=%TABLES%/spoken.xsd
 set IGNORE_PATH=%TABLES%/ignore_mess.txt
 set STAT=%LOG%/%CORPUS%_stat.txt
 
 call %SCRIPT_PATH%/venv/Scripts/activate.bat
-python3  %SCRIPT% %INPUT_PATH% --schema %SCHEMA_PATH% --table %CSV_PATH% --ignore_mess %IGNORE_PATH% --stat %STAT%
+python3  %SCRIPT% %INPUT_PATH% --scheme %SCHEMA_PATH%  --ignore_mess %IGNORE_PATH% --stat %STAT% --limit_doc 100

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="common.xsd"/>
+  <xs:element name="html" type="htmlType"/>
+
+  <xs:complexType name="paraType" mixed="true">
+    <xs:sequence minOccurs = "0" maxOccurs = "unbounded" >
+      <xs:element name="rhyme-zone" type="xs:string" fixed=""/>
+      <xs:element name="br" type="xs:string" fixed=""/>
+    </xs:sequence>
+    <xs:attribute type="xs:string" name="class" fixed="verse" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="bodyType" mixed="false">
+    <xs:sequence>
+      <xs:element type="paraType" name="p"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="htmlType">
+    <xs:sequence>
+      <xs:element type="headType" name="head"/>
+      <xs:element type="bodyType" name="body"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

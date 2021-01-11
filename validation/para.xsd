@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="common.xsd"/>
+  <xs:element name="html" type="htmlType"/>
+
+ 
+  <xs:complexType name="anaType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="gr" use="required"/>
+        <xs:attribute type="xs:string" name="lex" use="required"/>
+        <xs:attribute type="xs:string" name="transcr" use="optional"/>
+        <xs:attribute type="xs:string" name="transl" use="optional"/>
+        <xs:attribute type="xs:string" name="wordf" use="optional"/>
+        <xs:attribute type="jointClassType" name="joined" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:simpleType name="looseClassType" >
+    <xs:restriction base="xs:string">
+       <xs:pattern value="(add|omit|change){1}(,(add|omit|change)){0,2}"/>
+  </xs:restriction>
+  </xs:simpleType>
+
+<xs:simpleType name="jointClassType" >
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="together" />
+    </xs:restriction>
+  </xs:simpleType>
+
+
+  <xs:complexType name="wType" mixed="true">
+    <xs:sequence>
+      <xs:element type="anaType" name="ana" maxOccurs="unbounded"/>
+    </xs:sequence>
+ </xs:complexType>
+
+<xs:complexType name="fontType" mixed="true">
+   <xs:sequence>
+         <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element type="wType" name="w" />
+            <xs:element type="xs:string" name="em"/>
+            <xs:element type="xs:string" name="sup"/>
+	    <xs:element type="xs:string" name="b"/>
+	    <xs:element type="fontType" name="i"/>
+         </xs:choice>
+     </xs:sequence>
+   </xs:complexType>
+
+
+
+  <xs:complexType name="seType" mixed="true">
+   <xs:sequence>
+         <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element type="wType" name="w" />
+            <xs:element type="fontType" name="em"/>
+            <xs:element type="fontType" name="sup"/>
+	    <xs:element type="fontType" name="b"/>
+	    <xs:element type="fontType" name="i"/>
+         </xs:choice>
+     </xs:sequence>
+   <xs:attribute type="xs:string" name="lang" use="required"/>
+   <xs:attribute type="xs:int" name="variant_id" use="optional"/>
+   <xs:attribute type="looseClassType" name="loose" use="optional"/>
+  </xs:complexType>
+
+
+
+<xs:complexType name="paraType">
+    <xs:sequence>
+         <xs:element type="seType" name="se" maxOccurs="unbounded"/>
+      </xs:sequence>
+ <xs:attribute type="xs:int" name="id" use="optional"/>
+  </xs:complexType>
+
+ <xs:complexType name="pType">
+   <xs:sequence>
+        <xs:element type="paraType" name="para" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+<xs:complexType name="bodyType" mixed="true">
+   <xs:choice>
+    <xs:sequence >
+      <xs:element type="paraType" name="para" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:sequence >
+      <xs:element type="pType" name="p" maxOccurs="unbounded"/>
+    </xs:sequence>
+   </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="htmlType">
+    <xs:sequence>
+      <xs:element type="headType" name="head"/>
+      <xs:element type="bodyType" name="body"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

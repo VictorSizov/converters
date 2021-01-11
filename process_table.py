@@ -49,7 +49,7 @@ class ProcessorTable:
 
     def process(self):
         self.line = 1
-        with open(self.table_name, 'r') as f:
+        with open(self.table_name, 'r', encoding = 'utf-8') as f:
             self.reader = csv.DictReader(f, delimiter=';', restkey='###', strict=True, )
             try:
                 return self.process_data()

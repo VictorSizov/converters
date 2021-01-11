@@ -15,9 +15,10 @@ xcopy error_processor.py %COPY_PATH%\ /Y
 xcopy init.py %COPY_PATH%\ /Y
 xcopy lxml_ext.py %COPY_PATH%\ /Y
 xcopy processor_basic.py %COPY_PATH%\ /Y
+xcopy processor_table.py %COPY_PATH%\ /Y
 xcopy validator_basic.py %COPY_PATH%\ /Y
 xcopy validator_spoken.py %COPY_PATH%\ /Y
-xcopy validator_spoken.py %COPY_PATH%\ /Y
+xcopy validator_para.py %COPY_PATH%\ /Y
 xcopy install.cmd %COPY_PATH%\ /Y
 xcopy converter_spoken.cmd %COPY_PATH%\ /Y
 xcopy requirements.txt %COPY_PATH%\ /Y
